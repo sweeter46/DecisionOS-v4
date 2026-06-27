@@ -1,11 +1,10 @@
+# main.py dosyasını tamamen bununla değiştirin
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import requests
 import os
 import uvicorn
-import json
-import re
 
 app = FastAPI()
 
@@ -34,34 +33,13 @@ async def analyze(incident: Incident):
     try:
         response = requests.post(url, json=payload, timeout=30)
         ai_data = response.json()
-        raw_content = ai_data.get("result", {}).get("content", "")
-
-        # --- GÜÇLENDİRİLMİŞ JSON AYIKLAYICI ---
-        try:
-            # Metnin içinden JSON objesini cımbızla çekiyoruz
-            json_match = re.search(r'\{.*\}', raw_content, re.DOTALL)
-            if json_match:
-                parsed_ai = json.loads(json_match.group())
-                return {
-                    "boot_log": parsed_ai.get("boot_log", "[OK] AI Core Synced"),
-                    "final_decision": parsed_ai.get("final_decision", "KARAR ÜRETİLDİ"),
-                    "analysis": parsed_ai.get("analysis", "Analiz metni sentezleniyor..."),
-                    "action_plan": parsed_ai.get("action_plan", ["Plan metin içinde mevcut."]),
-                    "veto": parsed_ai.get("veto", "VETO Denetimi Aktif")
-                }
-            raise Exception("JSON not found")
-        except:
-            # AI JSON göndermezse, her şeyi Analysis kutusuna döküyoruz
-            return {
-                "boot_log": "[RAW_MODE] Direkt Veri Akışı",
-                "final_decision": "DETAYLI STRATEJİ",
-                "analysis": raw_content, # Tüm metni buraya koyduk
-                "action_plan": ["0-1h: Yukarıdaki analizi detaylıca inceleyin."],
-                "veto": "Analiz metninde yasaklı işlemler belirtilmiştir."
-            }
+        raw_content = ai_data.get("result", {}).get("content", "Cevap alınamadı.")
+        
+        # İşlemi basitleştiriyoruz: Sadece ham içeriği gönder
+        return {"raw_ai_answer": raw_content}
             
     except Exception as e:
-        return {"boot_log": "❌ HATA", "final_decision": "OFFLINE", "analysis": str(e), "action_plan": [], "veto": "Bağlantı Hatası"}
+        return {"raw_ai_answer": f"Hata oluştu: {str(e)}"}
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
