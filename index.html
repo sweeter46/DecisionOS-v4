@@ -32,16 +32,16 @@
     <script>
        const startBtn = document.getElementById('startBtn');
     const userInput = document.getElementById('userInput');
-    const resultArea = document.getElementById('resultArea');
     const reportContent = document.getElementById('reportContent');
     const statusText = document.getElementById('statusText');
 
     startBtn.addEventListener('click', async () => {
         const text = userInput.value.trim();
-        if (text.length < 5) return alert("Senaryo giriniz.");
-        resultArea.style.display = 'block';
+        if (!text) return;
+        
+        document.getElementById('resultArea').style.display = 'block';
         statusText.innerText = "SENTEZLENİYOR...";
-        reportContent.innerHTML = "DecisionOS v4.0 Strateji Raporu İnşa Ediliyor...";
+        reportContent.innerHTML = "Rapor hazırlanıyor...";
 
         try {
             const response = await fetch('https://decisionos-v4.onrender.com/analyze', {
@@ -51,52 +51,37 @@
             });
             const data = await response.json();
 
-            if (data.report) {
+            if (data.is_json) {
+                const r = data.report;
                 statusText.innerText = "ONLINE - ANALİZ HAZIR";
-                statusText.style.color = "#00ff88";
-
-                // --- 1.AŞAMA: TEMİZLİK (Kod bloklarını ve gereksiz boşlukları temizle) ---
-                let rawReport = data.report.replace(/```json/g, "").replace(/```/g, "").trim();
-
-                try {
-                    // --- 2.AŞAMA: MÜHÜR SÖKÜCÜ (Eğer veri string içindeyse objeye çevir) ---
-                    let reportObj = typeof rawReport === 'string' ? JSON.parse(rawReport) : rawReport;
-                    
-                    // Eğer hala string çıkarsa (Abacus bazen çift mühürler), bir kez daha parse et:
-                    if (typeof reportObj === 'string') {
-                        reportObj = JSON.parse(reportObj);
-                    }
-
-                    // --- 3.AŞAMA: GÖRSEL MAKİNA (Şık kutucukları bas) ---
-                    reportContent.innerHTML = `
-                        <div style="margin-bottom:20px; padding:15px; background:rgba(0,255,136,0.05); border-left:3px solid #00ff88; border-radius:8px;">
-                            <span style="color:#00ff88; font-family:'JetBrains Mono'; font-size:11px; display:block; margin-bottom:8px;">🚨 NİHAİ KARAR</span>
-                            <p style="margin:0; font-weight:600; color:#fff;">${reportObj.final_decision}</p>
-                        </div>
-                        <div style="margin-bottom:20px; padding:15px; background:rgba(255,255,255,0.02); border-left:3px solid #666; border-radius:8px;">
-                            <span style="color:#888; font-family:'JetBrains Mono'; font-size:11px; display:block; margin-bottom:8px;">📈 STRATEJİK ANALİZ</span>
-                            <p style="margin:0; font-size:14px; line-height:1.7; color:#ccc;">${reportObj.analysis}</p>
-                        </div>
-                        <div style="margin-bottom:20px; padding:15px; background:rgba(255,255,255,0.02); border-left:3px solid #00ff88; border-radius:8px;">
-                            <span style="color:#00ff88; font-family:'JetBrains Mono'; font-size:11px; display:block; margin-bottom:8px;">🛠️ AKSİYON PLANI</span>
-                            <ul style="margin:10px 0 0 0; padding-left:20px; font-size:14px; color:#ddd;">
-                                ${reportObj.action_plan.map(item => `<li style="margin-bottom:12px;">${item}</li>`).join('')}
-                            </ul>
-                        </div>
-                        <div style="padding:15px; background:rgba(255,71,87,0.05); border-left:3px solid #ff4757; border-radius:8px;">
-                            <span style="color:#ff4757; font-family:'JetBrains Mono'; font-size:11px; display:block; margin-bottom:8px;">⚠️ KRİTİK VETO</span>
-                            <p style="margin:0; font-size:14px; color:#ffb8b8;">${reportObj.veto}</p>
-                        </div>
-                    `;
-                } catch (parseErr) {
-                    // Eğer tüm denemelere rağmen JSON değilse düz metni bas
-                    reportContent.style.whiteSpace = "pre-wrap";
-                    reportContent.innerText = rawReport;
-                }
+                
+                // ŞİMDİ ŞIK KUTULARI BASIYORUZ (HİÇBİR PARANTEZ OLAMAZ!)
+                reportContent.innerHTML = `
+                    <div style="border-left:4px solid #00ff88; padding:15px; background:rgba(0,255,136,0.05); margin-bottom:20px; border-radius:8px;">
+                        <strong style="color:#00ff88; display:block; font-size:12px; margin-bottom:5px;">NİHAİ KARAR</strong>
+                        <p style="margin:0; font-weight:600;">${r.final_decision}</p>
+                    </div>
+                    <div style="border-left:4px solid #888; padding:15px; background:rgba(255,255,255,0.02); margin-bottom:20px; border-radius:8px;">
+                        <strong style="color:#888; display:block; font-size:12px; margin-bottom:5px;">STRATEJİK ANALİZ</strong>
+                        <p style="margin:0; font-size:14px; line-height:1.6;">${r.analysis}</p>
+                    </div>
+                    <div style="border-left:4px solid #00ff88; padding:15px; background:rgba(255,255,255,0.02); margin-bottom:20px; border-radius:8px;">
+                        <strong style="color:#00ff88; display:block; font-size:12px; margin-bottom:5px;">AKSİYON PLANI</strong>
+                        <ul style="margin:10px 0 0 0; padding-left:20px; font-size:14px;">
+                            ${r.action_plan.map(item => `<li style="margin-bottom:10px;">${item}</li>`).join('')}
+                        </ul>
+                    </div>
+                    <div style="border-left:4px solid #ff4757; padding:15px; background:rgba(255,71,87,0.05); border-radius:8px;">
+                        <strong style="color:#ff4757; display:block; font-size:12px; margin-bottom:5px;">⚠️ KRİTİK VETO</strong>
+                        <p style="margin:0; font-size:14px; color:#ffb8b8;">${r.veto}</p>
+                    </div>
+                `;
+            } else {
+                reportContent.innerText = data.report;
             }
-        } catch (error) {
-            statusText.innerText = "BAĞLANTI HATASI";
-            reportContent.innerText = "Sistem şu an meşgul. Lütfen 10 saniye sonra tekrar deneyin.";
+        } catch (e) {
+            statusText.innerText = "HATA";
+            reportContent.innerText = "Lütfen tekrar deneyin.";
         }
     });
     </script>
