@@ -1,4 +1,3 @@
-# main.py dosyasını tamamen bununla değiştirin
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -23,7 +22,7 @@ async def analyze(incident: Incident):
     DEPLOYMENT_TOKEN = "f3baa2a32be542f9af98a81aa71da611"
     DEPLOYMENT_ID = "685958564177fe899cd68b64e5f7fe1b" 
     
-    url = f"https://api.abacus.ai/api/v0/getChatResponse"
+    url = "https://api.abacus.ai/api/v0/getChatResponse"
     payload = {
         "deploymentToken": DEPLOYMENT_TOKEN,
         "deploymentId": DEPLOYMENT_ID,
@@ -33,9 +32,8 @@ async def analyze(incident: Incident):
     try:
         response = requests.post(url, json=payload, timeout=30)
         ai_data = response.json()
-        # Abacus'tan gelen saf metni çekiyoruz
-        output = ai_data.get("result", {}).get("content", "AI cevap üretemedi.")
-        return {"report": output}
+        report = ai_data.get("result", {}).get("content", "AI cevap üretemedi.")
+        return {"report": report}
     except Exception as e:
         return {"report": f"Bağlantı Hatası: {str(e)}"}
 
