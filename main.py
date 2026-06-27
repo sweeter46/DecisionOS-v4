@@ -7,6 +7,7 @@ import uvicorn
 
 app = FastAPI()
 
+# GÜVENLİK DUVARINI (CORS) TAMAMEN AÇIYORUZ
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -19,39 +20,49 @@ class Incident(BaseModel):
 
 @app.post("/analyze")
 async def analyze(incident: Incident):
-    # ABACUS.AI BİLGİLERİ
-    DEPLOYMENT_TOKEN = "f3baa2a32be542f9af98a81aa71da611" # Ekrandaki Token
-    DEPLOYMENT_ID = "63a2ddb70" # Bulduğun ID
-    
+    DEPLOYMENT_TOKEN = "f3baa2a32be542f9af98a81aa71da611"
+    DEPLOYMENT_ID = "63a2ddb70" # Senin bulduğun ID'yi buraya tam yaz
+
     url = "https://api.abacus.ai/api/v0/getChatResponse"
     
     payload = {
         "deploymentToken": DEPLOYMENT_TOKEN,
         "deploymentId": DEPLOYMENT_ID,
-        "messages": [{"role": "user", "content": f"DecisionOS v4.0 Protokolü: {incident.text}"}]
+        "messages": [{"role": "user", "content": incident.text}]
     }
 
     try:
-        # İstek gönderiliyor (Chatbot metodu API Key yerine Token ile çalışır)
-        response = requests.post(url, json=payload)
+        # Abacus'a isteği gönder
+        response = requests.post(url, json=payload, timeout=15)
         ai_data = response.json()
         
-        # Gelen cevabı ayıklıyoruz
-        ai_answer = ai_data.get("result", {}).get("content", "AI cevabı oluşturamadı.")
-        
-        return {
-            "boot_log": "[OK] DecisionHub v1.0 AI Core Yayında",
-            "final_decision": "AI STRATEJİK ANALİZ",
-            "analysis": ai_answer,
-            "action_plan": ["Aşağıdaki AI analizini uygulayın."],
-            "veto": "AI Denetimi Aktif"
-        }
+        # Abacus'un döndüğü veriye göre (getChatResponse yapısı)
+        if ai_data.get("success"):
+            ai_answer = ai_data["result"]["content"]
+            return {
+                "boot_log": "[OK] AI Core Bağlantısı Başarılı",
+                "final_decision": "AI STRATEJİK ANALİZ",
+                "analysis": ai_answer,
+                "action_plan": ["AI analizini uygulayın."],
+                "veto": "Veto Yetkisi AI Denetiminde"
+            }
+        else:
+            # Abacus başarısız olursa gelen hata mesajını göster
+            error_msg = ai_data.get("error", "Bilinmeyen Abacus hatası")
+            return {
+                "boot_log": "⚠️ AI_RESPONSE_ERROR",
+                "final_decision": "HATA",
+                "analysis": f"Abacus Hatası: {error_msg}",
+                "action_plan": ["Sistem parametrelerini kontrol edin."],
+                "veto": "Erişim Kısıtlı"
+            }
+
     except Exception as e:
         return {
-            "boot_log": "❌ BAĞLANTI HATASI",
+            "boot_log": "❌ CONNECTION_FAILED",
             "final_decision": "OFFLINE",
-            "analysis": f"Sistem hatası: {str(e)}",
-            "action_plan": ["Bağlantıyı kontrol edin."],
+            "analysis": f"Sunucu Hatası: {str(e)}",
+            "action_plan": ["Backend loglarını kontrol edin."],
             "veto": "Veto Yetkisi Devre Dışı"
         }
 
