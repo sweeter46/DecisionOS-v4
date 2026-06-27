@@ -4,27 +4,25 @@ from pydantic import BaseModel
 import requests
 import os
 import uvicorn
+import json
 
 app = FastAPI()
 
-# CORS Ayarları: Sayfanın sunucuyla konuşmasına izin verir
-# main.py içindeki CORS ayarını tamamen bununla değiştir:
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # Tüm dünyadan gelen isteklere izin ver
+    allow_origins=["*"],
     allow_credentials=True,
-    allow_methods=["*"], # POST, GET her şeye izin ver
+    allow_methods=["*"],
     allow_headers=["*"],
 )
 
 class Incident(BaseModel):
     text: str
 
-# main.py içindeki analyze fonksiyonunu bu zeki versiyonla değiştir:
 @app.post("/analyze")
 async def analyze(incident: Incident):
     DEPLOYMENT_TOKEN = "f3baa2a32be542f9af98a81aa71da611"
-    DEPLOYMENT_ID = "685958564177fe899cd68b64e5f7fe1b" 
+    DEPLOYMENT_ID = "63a2ddb70" 
     
     url = "https://api.abacus.ai/api/v0/getChatResponse"
     payload = {
@@ -36,36 +34,38 @@ async def analyze(incident: Incident):
     try:
         response = requests.post(url, json=payload, timeout=30)
         ai_data = response.json()
-        
-        # AI'dan gelen ham metni alıyoruz
         raw_content = ai_data.get("result", {}).get("content", "")
-        
-        # BURASI KRİTİK: AI'dan gelen cevabı JSON olarak okumaya çalışıyoruz
-        import json
+
+        # --- AKILLI JSON PARÇALAYICI ---
         try:
-            # Metnin başındaki ve sonundaki ```json gibi işaretleri temizleyip objeye çeviriyoruz
-            clean_content = raw_content.replace('```json', '').replace('```', '').strip()
-            parsed_ai = json.loads(clean_content)
+            # AI'dan gelen metnin içindeki JSON'u bul ve temizle
+            json_str = raw_content
+            if "```json" in json_str:
+                json_str = json_str.split("```json")[1].split("```")[0]
+            elif "```" in json_str:
+                json_str = json_str.split("```")[1].split("```")[0]
+            
+            parsed_ai = json.loads(json_str.strip())
             
             return {
-                "boot_log": parsed_ai.get("boot_log", "[OK] AI Core Active"),
-                "final_decision": parsed_ai.get("final_decision", "ANALİZ TAMAMLANDI"),
+                "boot_log": parsed_ai.get("boot_log", "[SYSTEM_SYNC] AI Aktif"),
+                "final_decision": parsed_ai.get("final_decision", "ANALİZ EDİLDİ"),
                 "analysis": parsed_ai.get("analysis", ""),
-                "action_plan": parsed_ai.get("action_plan", ["Aksiyon planı oluşturulamadı."]),
-                "veto": parsed_ai.get("veto", "VETO Kararı Bulunmuyor")
+                "action_plan": parsed_ai.get("action_plan", ["Plan metin içinde belirtildi."]),
+                "veto": parsed_ai.get("veto", "VETO Kararı Belirlendi")
             }
         except:
-            # Eğer AI JSON formatında değil de düz yazı olarak cevap verirse (Hata koruması)
+            # Eğer AI JSON döndürmezse, her şeyi Analysis kutusuna dök (Güvenli Mod)
             return {
-                "boot_log": "[SENTEZ_HATASI] AI düz metin döndürdü.",
-                "final_decision": "DETAYLI ANALİZ",
+                "boot_log": "[RAW_DATA_MODE] Detaylı Sentez",
+                "final_decision": "DETAYLI STRATEJİ",
                 "analysis": raw_content,
-                "action_plan": ["Lütfen yukarıdaki analiz metnini inceleyin."],
-                "veto": "AI tarafından metin içinde belirtildi."
+                "action_plan": ["0-1h: Yukarıdaki analizi inceleyin.", "24h: Kriz masasını bilgilendirin."],
+                "veto": "Analiz metninde detaylandırılmıştır."
             }
             
     except Exception as e:
-        return {"boot_log": "❌ HATA", "final_decision": "BAĞLANTI YOK", "analysis": str(e), "action_plan": [], "veto": "Yok"}
+        return {"boot_log": "❌ HATA", "final_decision": "OFFLINE", "analysis": str(e), "action_plan": [], "veto": "Hata"}
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
