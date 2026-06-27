@@ -7,7 +7,7 @@ import uvicorn
 
 app = FastAPI()
 
-# GÜVENLİK DUVARINI (CORS) TAMAMEN AÇIYORUZ
+# CORS Ayarları: Sayfanın sunucuyla konuşmasına izin verir
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -20,9 +20,10 @@ class Incident(BaseModel):
 
 @app.post("/analyze")
 async def analyze(incident: Incident):
+    # ABACUS.AI BİLGİLERİ (Buraları kendi bilgilerinle doldur)
     DEPLOYMENT_TOKEN = "f3baa2a32be542f9af98a81aa71da611"
-    DEPLOYMENT_ID = "63a2ddb70" # Senin bulduğun ID'yi buraya tam yaz
-
+    DEPLOYMENT_ID = "685958564177fe899cd68b64e5f7fe1b" # Bu ID'yi kontrol et
+    
     url = "https://api.abacus.ai/api/v0/getChatResponse"
     
     payload = {
@@ -32,38 +33,33 @@ async def analyze(incident: Incident):
     }
 
     try:
-        # Abacus'a isteği gönder
-        response = requests.post(url, json=payload, timeout=15)
+        response = requests.post(url, json=payload, timeout=20)
         ai_data = response.json()
         
-        # Abacus'un döndüğü veriye göre (getChatResponse yapısı)
         if ai_data.get("success"):
             ai_answer = ai_data["result"]["content"]
             return {
-                "boot_log": "[OK] AI Core Bağlantısı Başarılı",
+                "boot_log": "[OK] DecisionHub v1.0 AI Core Yayında",
                 "final_decision": "AI STRATEJİK ANALİZ",
                 "analysis": ai_answer,
-                "action_plan": ["AI analizini uygulayın."],
-                "veto": "Veto Yetkisi AI Denetiminde"
+                "action_plan": ["AI analizini aşağıdan takip edin."],
+                "veto": "AI Denetimi Aktif"
             }
         else:
-            # Abacus başarısız olursa gelen hata mesajını göster
-            error_msg = ai_data.get("error", "Bilinmeyen Abacus hatası")
             return {
-                "boot_log": "⚠️ AI_RESPONSE_ERROR",
+                "boot_log": "⚠️ AI_ERROR",
                 "final_decision": "HATA",
-                "analysis": f"Abacus Hatası: {error_msg}",
+                "analysis": f"Abacus Hatası: {ai_data.get('error')}",
                 "action_plan": ["Sistem parametrelerini kontrol edin."],
                 "veto": "Erişim Kısıtlı"
             }
-
     except Exception as e:
         return {
             "boot_log": "❌ CONNECTION_FAILED",
             "final_decision": "OFFLINE",
             "analysis": f"Sunucu Hatası: {str(e)}",
-            "action_plan": ["Backend loglarını kontrol edin."],
-            "veto": "Veto Yetkisi Devre Dışı"
+            "action_plan": ["Bağlantıyı kontrol edin."],
+            "veto": "Devre Dışı"
         }
 
 if __name__ == "__main__":
