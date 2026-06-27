@@ -95,3 +95,25 @@ ul {
     list-style-type: square;
     padding-left: 20px;
 }
+
+
+#reportContent { 
+    font-size: 14px; 
+    line-height: 1.8; 
+}
+.report-section {
+    margin-bottom: 20px;
+    padding: 15px;
+    background: rgba(255,255,255,0.03);
+    border-radius: 8px;
+    border-left: 2px solid var(--accent);
+}
+.section-title {
+    color: var(--accent);
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    display: block;
+    font-family: 'JetBrains Mono';
+}
