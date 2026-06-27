@@ -41,17 +41,15 @@
                 document.addEventListener('DOMContentLoaded', () => {
             const startBtn = document.getElementById('startBtn');
             const textArea = document.querySelector('textarea');
-            const bootLog = document.getElementById('bootLog');
+            const analysisText = document.getElementById('analysisText');
             const resultArea = document.getElementById('resultArea');
-            const analysisText = document.getElementById('analysisText'); // undefined yazan yer
 
             startBtn.addEventListener('click', async () => {
                 const userInput = textArea.value.trim();
                 if (userInput.length < 5) return alert("Lütfen metin girin.");
 
                 resultArea.classList.remove('hidden');
-                bootLog.innerText = "⚙️ Protokol Başlatıldı. AI Verisi Sentezleniyor...";
-                analysisText.innerText = "AI cevap üretiyor, bu işlem 5-10 saniye sürebilir...";
+                analysisText.innerText = "🚨 ANALİZ BAŞLATILDI... Lütfen 10-15 saniye bekleyin. Abacus AI kriz senaryosunu sentezliyor...";
 
                 try {
                     const response = await fetch('https://decisionos-v4.onrender.com/analyze', {
@@ -61,24 +59,17 @@
                     });
 
                     const data = await response.json();
-                    console.log("Sunucudan Gelen Ham Veri:", data);
-
-                    // --- GARANTİCİ VERİ OKUMA ---
-                    // Eğer data.raw_ai_answer yoksa, gelen objenin içindeki ilk değeri bulmaya çalış
-                    const finalContent = data.raw_ai_answer || data.result || Object.values(data)[0];
-
-                    bootLog.innerText = "⚙️ ANALİZ TAMAMLANDI";
-                    document.getElementById('finalDecision').innerText = "STRATEJİK RAPOR OLUŞTURULDU";
                     
-                    // Eğer gelen veri hala undefined ise hata mesajı bas
-                    analysisText.innerText = finalContent || "Cevap formatı çözülemedi, ancak bağlantı başarılı!";
-                    
-                    document.getElementById('actionPlanList').innerHTML = "<li>Aksiyon planı yukarıdaki raporun içindedir.</li>";
-                    document.getElementById('vetoText').innerText = "Rapor içeriğini inceleyin.";
+                    // Gelen veriyi doğrudan kutuya basıyoruz
+                    if (data.report) {
+                        analysisText.style.whiteSpace = "pre-wrap"; // Satır atlamalarını korumak için
+                        analysisText.innerText = data.report;
+                    } else {
+                        analysisText.innerText = "Cevap formatı beklenmedik: " + JSON.stringify(data);
+                    }
 
                 } catch (error) {
-                    console.error("HATA:", error);
-                    analysisText.innerText = "Bağlantı Hatası: Sunucuya ulaşılamadı.";
+                    analysisText.innerText = "Bağlantı koptu: " + error.message;
                 }
             });
         });

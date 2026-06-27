@@ -23,7 +23,7 @@ async def analyze(incident: Incident):
     DEPLOYMENT_TOKEN = "f3baa2a32be542f9af98a81aa71da611"
     DEPLOYMENT_ID = "685958564177fe899cd68b64e5f7fe1b" 
     
-    url = "https://api.abacus.ai/api/v0/getChatResponse"
+    url = f"https://api.abacus.ai/api/v0/getChatResponse"
     payload = {
         "deploymentToken": DEPLOYMENT_TOKEN,
         "deploymentId": DEPLOYMENT_ID,
@@ -33,13 +33,11 @@ async def analyze(incident: Incident):
     try:
         response = requests.post(url, json=payload, timeout=30)
         ai_data = response.json()
-        raw_content = ai_data.get("result", {}).get("content", "Cevap alınamadı.")
-        
-        # İşlemi basitleştiriyoruz: Sadece ham içeriği gönder
-        return {"raw_ai_answer": raw_content}
-            
+        # Abacus'tan gelen saf metni çekiyoruz
+        output = ai_data.get("result", {}).get("content", "AI cevap üretemedi.")
+        return {"report": output}
     except Exception as e:
-        return {"raw_ai_answer": f"Hata oluştu: {str(e)}"}
+        return {"report": f"Bağlantı Hatası: {str(e)}"}
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
