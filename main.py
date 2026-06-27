@@ -8,10 +8,12 @@ import uvicorn
 app = FastAPI()
 
 # CORS Ayarları: Sayfanın sunucuyla konuşmasına izin verir
+# main.py içindeki CORS ayarını tamamen bununla değiştir:
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
+    allow_origins=["*"], # Tüm dünyadan gelen isteklere izin ver
+    allow_credentials=True,
+    allow_methods=["*"], # POST, GET her şeye izin ver
     allow_headers=["*"],
 )
 

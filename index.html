@@ -63,8 +63,10 @@
             actionPlanList.innerHTML = ""; 
 
             try {
+                // index.html içindeki fetch kısmını böyle güncelle:
                 const response = await fetch('https://decisionos-v4.onrender.com/analyze', {
                     method: 'POST',
+                    mode: 'cors', // Bunu ekledik
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ text: userInput })
                 });
