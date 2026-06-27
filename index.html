@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DecisionOS v4.0 - Prometheus</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>DecisionOS <span>v4.0 Prometheus</span></h1>
+            <p>Sistem Durumu: ÇEVRİMİÇİ | Risk Seviyesi: İzleniyor</p>
+        </header>
+
+        <main>
+            <div class="input-area">
+                <textarea id="incidentInput" placeholder="Acil durum senaryosunu veya olayı buraya girin..."></textarea>
+                <button onclick="analyzeIncident()">PROTOKOLÜ BAŞLAT</button>
+            </div>
+
+            <div id="resultArea" class="result-area hidden">
+    <div class="boot-log" id="bootLog"></div>
+    
+    <div class="decision-box">
+        <h3>🚨 NİHAİ KARAR: <span id="finalDecision"></span></h3>
+        <p id="analysisText"></p>
+    </div>
+
+    <div class="action-plan-box">
+        <h4>🛠️ EYLEM PLANI (SAVAŞ KABİNESİ)</h4>
+        <ul id="actionPlanList"></ul>
+    </div>
+
+    <div class="veto-box">
+        <p>⚠️ <strong>VETO KARARI:</strong> <span id="vetoText"></span></p>
+    </div>
+</div>
+        </main>
+    </div>
+    <script>
+        function typeEffect(element, text, speed = 30) {
+    element.innerText = "";
+    let i = 0;
+    let timer = setInterval(() => {
+        if (i < text.length) {
+            element.innerText += text.charAt(i);
+            i++;
+        } else {
+            clearInterval(timer);
+        }
+            }, speed);
+        }
+
+    async function analyzeIncident() {
+        const userInput = document.getElementById('incidentInput').value;
+        const bootLog = document.getElementById('bootLog');
+        const finalDecision = document.getElementById('finalDecision');
+        const resultArea = document.getElementById('resultArea');
+        const actionPlanList = document.getElementById('actionPlanList');
+
+        if (!userInput) return alert("Lütfen bir olay girin!");
+
+        resultArea.classList.remove('hidden');
+        bootLog.innerText = "⚙️ Protokol başlatılıyor...";
+        actionPlanList.innerHTML = ""; 
+
+        try {
+            const response = await fetch('http://127.0.0.1:8000/analyze', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: userInput })
+            });
+
+            const data = await response.json();
+
+            bootLog.innerText = data.boot_log;
+            finalDecision.innerText = data.final_decision;
+            document.getElementById('analysisText').innerText = data.analysis;
+            document.getElementById('vetoText').innerText = data.veto;
+
+            data.action_plan.forEach(item => {
+                let li = document.createElement("li");
+                li.innerText = item;
+                actionPlanList.appendChild(li);
+            });
+
+        } catch (error) {
+            bootLog.innerText = "❌ HATA: Backend Çevrimdışı!";
+        }
+    }
+</script>
+    
+</body>
+</html>
