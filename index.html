@@ -69,9 +69,21 @@
                     // Makyajlama ve Parantez Kazıma
                     let cleanText = data.report.trim();
                     // AI bazen ```json bloğu ekler, onu kazıyoruz:
-                    if (cleanText.includes("```")) {
-                        cleanText = cleanText.split(/```(?:json)?/)[1].split("```")[0].trim();
+                    // --- ATOMİK TEMİZLEYİCİ BAŞLANGIÇ ---
+                    let cleanText = data.report.trim();
+                    
+                    // Eğer metin içinde parantez varsa ama başında-sonunda çöp varsa onları kırp:
+                    const firstBrace = cleanText.indexOf('{');
+                    const lastBrace = cleanText.lastIndexOf('}');
+                    
+                    if (firstBrace !== -1 && lastBrace !== -1) {
+                        cleanText = cleanText.substring(firstBrace, lastBrace + 1);
                     }
+                    // --- ATOMİK TEMİZLEYİCİ BİTİŞ ---
+
+                    try {
+                        const reportObj = JSON.parse(cleanText);
+                        // ... (Geri kalan HTML basma kodları aynı)
 
                     try {
                         const reportObj = JSON.parse(cleanText);
