@@ -38,64 +38,77 @@
     </div>
 
     <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const startBtn = document.getElementById('startBtn');
-        const textArea = document.querySelector('textarea');
-        const bootLog = document.getElementById('bootLog');
-        const resultArea = document.getElementById('resultArea');
+        document.addEventListener('DOMContentLoaded', () => {
+            const startBtn = document.getElementById('startBtn');
+            const textArea = document.querySelector('textarea');
+            const bootLog = document.getElementById('bootLog');
+            const resultArea = document.getElementById('resultArea');
+            const actionPlanList = document.getElementById('actionPlanList');
+            const finalDecision = document.getElementById('finalDecision');
+            const analysisText = document.getElementById('analysisText');
+            const vetoText = document.getElementById('vetoText');
 
-        startBtn.addEventListener('click', async () => {
-            const userInput = textArea.value.trim();
-            
-            console.log("1. ADIM: Buton tetiklendi. Metin:", userInput);
-
-            if (userInput.length < 5) {
-                alert("Lütfen en az 5 karakterlik bir olay girin!");
-                return;
-            }
-
-            // Arayüzü hazırla
-            resultArea.classList.remove('hidden');
-            bootLog.innerText = "⚙️ Protokol başlatılıyor... Sunucuya bağlanılıyor...";
-
-            try {
-                console.log("2. ADIM: Fetch isteği yola çıkıyor...");
+            startBtn.addEventListener('click', async () => {
+                const userInput = textArea.value.trim();
                 
-                const response = await fetch('https://decisionos-v4.onrender.com/analyze', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ text: userInput })
-                });
-
-                console.log("3. ADIM: Sunucudan cevap geldi. Durum:", response.status);
-
-                if (!response.ok) {
-                    throw new Error("Sunucu hata döndürdü: " + response.status);
+                // Kontrol 1: Metin girişi var mı?
+                if (userInput.length < 5) {
+                    alert("Lütfen en az 5 karakterlik bir olay girin!");
+                    return;
                 }
 
-                const data = await response.json();
-                console.log("4. ADIM: Veri başarıyla çözüldü:", data);
+                console.log("Süreç Başladı. Giriş:", userInput);
 
-                // Ekrana Yazdırma
-                bootLog.innerText = data.boot_log;
-                document.getElementById('finalDecision').innerText = data.final_decision;
-                document.getElementById('analysisText').innerText = data.analysis;
-                document.getElementById('vetoText').innerText = data.veto;
+                // Ekran Hazırlığı
+                resultArea.classList.remove('hidden');
+                bootLog.innerText = "⚙️ Protokol başlatılıyor... AI Sentezleme Birimi Bağlanıyor...";
+                actionPlanList.innerHTML = "<li>Analiz yapılıyor, lütfen bekleyin...</li>"; 
 
-                const actionPlanList = document.getElementById('actionPlanList');
-                actionPlanList.innerHTML = "";
-                data.action_plan.forEach(item => {
-                    let li = document.createElement("li");
-                    li.innerText = item;
-                    actionPlanList.appendChild(li);
-                });
+                try {
+                    // RENDER BAĞLANTISI
+                    const response = await fetch('https://decisionos-v4.onrender.com/analyze', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ text: userInput })
+                    });
 
-            } catch (error) {
-                console.error("KRİTİK HATA:", error);
-                bootLog.innerText = "❌ HATA: " + error.message;
-            }
+                    if (!response.ok) throw new Error("Sunucu hatası: " + response.status);
+
+                    const data = await response.json();
+                    console.log("AI'dan Gelen Veri:", data);
+
+                    // 1. Boot Log ve Karar Yazdırma
+                    bootLog.innerText = data.boot_log || "[OK] Sistem Yanıtı Alındı";
+                    finalDecision.innerText = data.final_decision || "KARAR ÜRETİLDİ";
+                    analysisText.innerText = data.analysis || "Detaylı analiz metni hazırlanıyor...";
+                    vetoText.innerText = data.veto || "Veto kararı bulunmuyor.";
+
+                    // 2. Eylem Planı Yazdırma (Esnek Döngü)
+                    actionPlanList.innerHTML = ""; // Temizle
+                    
+                    if (data.action_plan && Array.isArray(data.action_plan)) {
+                        // Eğer verimiz bir listeyse (İstediğimiz format)
+                        data.action_plan.forEach(item => {
+                            let li = document.createElement("li");
+                            li.innerText = item;
+                            actionPlanList.appendChild(li);
+                        });
+                    } else if (data.action_plan) {
+                        // Eğer veri hata verip düz metin geldiyse
+                        let li = document.createElement("li");
+                        li.innerText = data.action_plan;
+                        actionPlanList.appendChild(li);
+                    } else {
+                        actionPlanList.innerHTML = "<li>Aksiyon planı oluşturulamadı.</li>";
+                    }
+
+                } catch (error) {
+                    console.error("KRİTİK HATA:", error);
+                    bootLog.innerText = "❌ SİSTEM HATASI: Bağlantı koptu veya zaman aşımına uğradı.";
+                    actionPlanList.innerHTML = "<li>Hata Detayı: " + error.message + "<​/li>";
+                }
+            });
         });
-    });
-</script>
+    </script>
 </body>
 </html>
