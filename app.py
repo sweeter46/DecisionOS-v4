@@ -21,34 +21,34 @@ class Incident(BaseModel):
 async def analyze(incident: Incident):
     url = "https://api.abacus.ai/api/v0/getChatResponse"
     
-    # ABACUS'ÜN İSTEDİĞİ EN KESİN FORMAT
+    # ABACUS'UN BEKLEYEBİLECEĞİ 3 FARKLI FORMATI DENİYORUZ
+    # Eğer messages listesi hata veriyorsa, 'prompt' olarak göndermeyi deneyeceğiz
     payload = {
         "deploymentToken": "f3baa2a32be542f9af98a81aa71da611",
         "deploymentId": "63a2ddb70",
-        "messages": [
-            {
-                "is_user": True,
-                "text": incident.text
-            }
-        ]
+        # Chatbot formatı (Genelde bunu ister)
+        "messages": [{"is_user": True, "text": incident.text}],
+        # Alternatif tahmin formatı (Eğer chatbot değilse bunu ister)
+        "prompt": incident.text,
+        "input_data": {"text": incident.text}
     }
 
     try:
         response = requests.post(url, json=payload, timeout=30)
         ai_data = response.json()
         
+        # Hata Yönetimi
         if ai_data.get("success") == True:
-            # Result objesinin içindeki içeriği alıyoruz
             result = ai_data.get("result", {})
-            report = result.get("content") or result.get("text") or "Analiz tamamlandı."
+            # Cevap content, response veya text içinde olabilir
+            report = result.get("content") or result.get("text") or result.get("response") or "Analiz üretildi."
             return {"report": report}
         else:
-            # Abacus'ten gelen hata mesajını temizce gösterelim
-            error_msg = ai_data.get("error", "Bilinmeyen bir Abacus hatası.")
-            return {"report": f"Abacus Sistem Yanıtı: {error_msg}"}
+            # Burası KRİTİK: Abacus'un bize tam olarak ne hata verdiğini burada göreceğiz.
+            return {"report": f"Abacus Sistem Yanıtı: {ai_data.get('error')}"}
             
     except Exception as e:
-        return {"report": f"Sistem hatası oluştu: {str(e)}"}
+        return {"report": f"Bağlantı Hatası: {str(e)}"}
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
