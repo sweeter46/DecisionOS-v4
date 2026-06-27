@@ -13,183 +13,99 @@
             --text: #e1e1e6;
             --danger: #ff4757;
         }
-        body {
-            background: var(--bg);
-            color: var(--text);
-            font-family: 'Inter', sans-serif;
-            margin: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-        }
-        .dashboard {
-            width: 90%;
-            max-width: 900px;
-            background: var(--card);
-            border-radius: 20px;
-            padding: 40px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-            border: 1px solid #2d2d35;
-        }
-        h1 {
-            color: var(--accent);
-            font-weight: 600;
-            letter-spacing: -1px;
-            margin-bottom: 5px;
-        }
-        #statusLight {
-            font-size: 10px; 
-            color: #555; 
-            margin-bottom: 15px; 
-            font-family: 'JetBrains Mono';
-        }
-        p.subtitle {
-            color: #888;
-            margin-bottom: 30px;
-        }
-        textarea {
-            width: 100%;
-            height: 120px;
-            background: #1c1c21;
-            border: 1px solid #333;
-            border-radius: 12px;
-            color: white;
-            padding: 15px;
-            font-family: inherit;
-            resize: none;
-            box-sizing: border-box;
-            transition: border 0.3s;
-        }
-        textarea:focus {
-            outline: none;
-            border-color: var(--accent);
-        }
-        button {
-            width: 100%;
-            padding: 15px;
-            background: var(--accent);
-            color: black;
-            border: none;
-            border-radius: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            margin-top: 15px;
-            transition: transform 0.2s, opacity 0.2s;
-        }
-        button:hover {
-            transform: translateY(-2px);
-            opacity: 0.9;
-        }
-        .result-container {
-            margin-top: 30px;
-            padding: 20px;
-            background: #1c1c21;
-            border-radius: 12px;
-            border-left: 4px solid var(--accent);
-            display: none;
-        }
-        .report-header {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 13px;
-            color: var(--accent);
-            margin-bottom: 15px;
-        }
-        #reportContent {
-            line-height: 1.6;
-            white-space: pre-wrap;
-            font-size: 15px;
-        }
+        body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .dashboard { width: 90%; max-width: 900px; background: var(--card); border-radius: 20px; padding: 40px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); border: 1px solid #2d2d35; }
+        h1 { color: var(--accent); font-weight: 600; letter-spacing: -1px; margin-bottom: 5px; }
+        #statusLight { font-size: 10px; color: #555; margin-bottom: 15px; font-family: 'JetBrains Mono'; }
+        p.subtitle { color: #888; margin-bottom: 30px; }
+        textarea { width: 100%; height: 120px; background: #1c1c21; border: 1px solid #333; border-radius: 12px; color: white; padding: 15px; font-family: inherit; resize: none; box-sizing: border-box; transition: border 0.3s; }
+        textarea:focus { outline: none; border-color: var(--accent); }
+        button { width: 100%; padding: 15px; background: var(--accent); color: black; border: none; border-radius: 12px; font-weight: 600; cursor: pointer; margin-top: 15px; transition: 0.2s; }
+        button:hover { transform: translateY(-2px); opacity: 0.9; }
+        .result-container { margin-top: 30px; padding: 20px; background: #1c1c21; border-radius: 12px; border-left: 4px solid var(--accent); display: none; }
+        .report-section { margin-bottom: 25px; padding: 15px; background: rgba(255,255,255,0.02); border-radius: 8px; border-left: 3px solid #333; }
+        .section-title { color: var(--accent); font-family: 'JetBrains Mono'; font-size: 11px; text-transform: uppercase; margin-bottom: 10px; display: block; border-bottom: 1px solid #2d2d35; padding-bottom: 5px; }
     </style>
 </head>
 <body>
     <div class="dashboard">
         <h1>DecisionOS</h1>
-        <div id="statusLight">● SINYAL: <span id="statusText">V4.1.2 - READY</span></div>
-        <p class="subtitle">Kriz senaryosunu girin, AI stratejinizi sentezlesin.</p>
-        
-        <textarea id="userInput" placeholder="Problemi buraya detaylandırın..."></textarea>
+        <div id="statusLight">● SINYAL: <span id="statusText">V4.1.5 - ELITE READY</span></div>
+        <p class="subtitle">DecisionOS v4.0 Prometheus | Kurumsal Karar Destek Mekanizması</p>
+        <textarea id="userInput" placeholder="Kriz senaryosunu buraya girin..."></textarea>
         <button id="startBtn">PROTOKOLÜ TETİKLE</button>
-
         <div id="resultArea" class="result-container">
-            <div id="bootLog" class="report-header">⚙️ STRATEJİK ANALİZ AKTİF</div>
-            <div id="reportContent">Lütfen bekleyin, kriz stratejisi kurgulanıyor...</div>
+            <div id="reportContent">Analiz sentezleniyor...</div>
         </div>
     </div>
 
     <script>
-                        const startBtn = document.getElementById('startBtn');
-                const userInput = document.getElementById('userInput');
-                const resultArea = document.getElementById('resultArea');
-                const reportContent = document.getElementById('reportContent');
-                const statusText = document.getElementById('statusText');
+        const startBtn = document.getElementById('startBtn');
+        const userInput = document.getElementById('userInput');
+        const resultArea = document.getElementById('resultArea');
+        const reportContent = document.getElementById('reportContent');
+        const statusText = document.getElementById('statusText');
 
-                startBtn.addEventListener('click', async () => {
-                    const text = userInput.value.trim();
-                    if (text.length < 5) return alert("Senaryo giriniz.");
+        startBtn.addEventListener('click', async () => {
+            const text = userInput.value.trim();
+            if (text.length < 5) return alert("Senaryo girmelisiniz.");
+            resultArea.style.display = 'block';
+            statusText.innerText = "SENTEZLENİYOR...";
+            statusText.style.color = "#ffaa00";
+            reportContent.innerHTML = "<p style='color:#888;'>AI Core üzerinden veriler çekiliyor, lütfen bekleyin...</p>";
 
-                    resultArea.style.display = 'block';
-                    statusText.innerText = "SENTEZLENİYOR...";
-                    statusText.style.color = "#ffaa00";
-                    reportContent.innerHTML = "Abacus AI Core üzerinden stratejik rapor inşa ediliyor...";
+            try {
+                const response = await fetch('https://decisionos-v4.onrender.com/analyze', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: text })
+                });
+                const data = await response.json();
+
+                if (data.report) {
+                    statusText.innerText = "ONLINE - ANALİZ BAŞARILI";
+                    statusText.style.color = "#00ff88";
+
+                    // Makyajlama ve Parantez Kazıma
+                    let cleanText = data.report.trim();
+                    // AI bazen ```json bloğu ekler, onu kazıyoruz:
+                    if (cleanText.includes("```")) {
+                        cleanText = cleanText.split(/```(?:json)?/)[1].split("```")[0].trim();
+                    }
 
                     try {
-                        const response = await fetch('https://decisionos-v4.onrender.com/analyze', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ text: text })
-                        });
-
-                        const data = await response.json();
-
-                        if (data.report) {
-                            statusText.innerText = "ONLINE - ANALİZ HAZIR";
-                            statusText.style.color = "#00ff88";
-
-                            try {
-                                // Gelen metin JSON formatında ise onu parçalayıp şık bir tasarıma sokuyoruz
-                                const reportObj = JSON.parse(data.report);
-                                
-                                let htmlOutput = `
-                                    <div style="margin-bottom: 20px; padding: 15px; background: rgba(0,255,136,0.05); border-left: 3px solid #00ff88; border-radius: 4px;">
-                                        <strong style="color:#00ff88; font-family:'JetBrains Mono'; font-size:12px; display:block; margin-bottom:5px;">🚨 NİHAİ KARAR</strong>
-                                        <p style="margin:0; font-weight:600;">${reportObj.final_decision}</p>
-                                    </div>
-
-                                    <div style="margin-bottom: 20px; padding: 15px; background: rgba(255,255,255,0.03); border-left: 3px solid #888; border-radius: 4px;">
-                                        <strong style="color:#888; font-family:'JetBrains Mono'; font-size:12px; display:block; margin-bottom:5px;">📊 STRATEJİK ANALİZ</strong>
-                                        <p style="margin:0; font-size:14px; line-height:1.6; color:#ccc;">${reportObj.analysis}</p>
-                                    </div>
-
-                                    <div style="margin-bottom: 20px; padding: 15px; background: rgba(255,255,255,0.03); border-left: 3px solid #00ff88; border-radius: 4px;">
-                                        <strong style="color:#00ff88; font-family:'JetBrains Mono'; font-size:12px; display:block; margin-bottom:5px;">🛠️ AKSİYON PLANI (0-72h)</strong>
-                                        <ul style="margin-top:10px; padding-left:20px; color:#ddd;">
-                                            ${reportObj.action_plan.map(item => `<li style="margin-bottom:8px;">${item}</li>`).join('')}
-                                        </ul>
-                                    </div>
-
-                                    <div style="padding: 15px; background: rgba(255,71,87,0.1); border-left: 3px solid #ff4757; border-radius: 4px;">
-                                        <strong style="color:#ff4757; font-family:'JetBrains Mono'; font-size:12px; display:block; margin-bottom:5px;">⚠️ KRİTİK VETO</strong>
-                                        <p style="margin:0; color:#ffb8b8; font-size:14px;">${reportObj.veto}</p>
-                                    </div>
-                                `;
-                                reportContent.innerHTML = htmlOutput;
-                            } catch (parseError) {
-                                // Eğer gelen veri JSON değilse düz metin olarak göster
-                                reportContent.style.whiteSpace = "pre-wrap";
-                                reportContent.innerText = data.report;
-                            }
-                        } else {
-                            reportContent.innerText = "Sunucudan rapor metni alınamadı.";
-                        }
-
-                    } catch (error) {
-                        statusText.innerText = "BAĞLANTI HATASI";
-                        statusText.style.color = "#ff4757";
-                        reportContent.innerText = "Sunucu yanıt vermedi. Lütfen biraz bekleyip tekrar deneyin.";
+                        const reportObj = JSON.parse(cleanText);
+                        reportContent.innerHTML = `
+                            <div class="report-section" style="border-color:#00ff88; background:rgba(0,255,136,0.03);">
+                                <span class="section-title">🛑 NİHAİ KARAR (EXECUTIVE)</span>
+                                <p style="font-weight:600; margin:0;">${reportObj.final_decision}</p>
+                            </div>
+                            <div class="report-section">
+                                <span class="section-title">📉 STRATEJİK ANALİZ</span>
+                                <p style="font-size:14px; color:#ccc; margin:0; line-height:1.7;">${reportObj.analysis}</p>
+                            </div>
+                            <div class="report-section">
+                                <span class="section-title">🛠️ AKSİYON PLANI (T+72h)</span>
+                                <ul style="margin-top:10px; color:#ddd; font-size:14px;">
+                                    ${reportObj.action_plan.map(item => `<li style="margin-bottom:10px;">${item}</li>`).join('')}
+                                </ul>
+                            </div>
+                            <div class="report-section" style="border-color:var(--danger); background:rgba(255,71,87,0.03);">
+                                <span class="section-title" style="color:var(--danger);">⚠️ KRİTİK VETO</span>
+                                <p style="color:#ffb8b8; margin:0; font-size:14px;">${reportObj.veto}</p>
+                            </div>
+                        `;
+                    } catch (e) {
+                        reportContent.style.whiteSpace = "pre-wrap";
+                        reportContent.innerText = cleanText;
                     }
-                });
-          
+                }
+            } catch (error) {
+                statusText.innerText = "BAĞLANTI HATASI";
+                statusText.style.color = "#ff4757";
+                reportContent.innerText = "Sunucu yanıt vermedi. Lütfen tekrar deneyin.";
+            }
+        });
     </script>
 </body>
 </html>
