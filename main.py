@@ -1,7 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-import random
+import requests
+import os
+import uvicorn
 
 app = FastAPI()
 
@@ -17,39 +19,41 @@ class Incident(BaseModel):
 
 @app.post("/analyze")
 async def analyze(incident: Incident):
-    text = incident.text.lower()
+    # ABACUS.AI BİLGİLERİ
+    DEPLOYMENT_TOKEN = "f3baa2a32be542f9af98a81aa71da611" # Ekrandaki Token
+    DEPLOYMENT_ID = "63a2ddb70" # Bulduğun ID
     
-    # 1. Uzman Paketleri Belirleme
-    packages = []
-    if any(word in text for word in ["para", "usd", "banka", "kredi", "nakit"]): packages.append("FINANCE_PRO")
-    if any(word in text for word in ["saldırı", "hack", "şifre", "ransomware", "veri"]): packages.append("CYBER_PRO")
-    if any(word in text for word in ["dava", "hukuk", "yasal", "sözleşme", "suç"]): packages.append("LAW_PRO")
-    if any(word in text for word in ["çalışan", "eleman", "istifa", "rakip"]): packages.append("TALENT_PRO")
+    url = "https://api.abacus.ai/api/v0/getChatResponse"
     
-    if not packages: packages = ["STRATEGY_PRO"]
-
-    # 2. Risk Seviyesi Hesaplama (Temsili)
-    risk_level = len(packages) * 2 + random.randint(1, 2)
-    if risk_level > 10: risk_level = 10
-
-    # 3. Decision Brief Oluşturma
-    # Burada gerçek v4.0 mimarisindeki alt başlıkları kurguluyoruz
-    brief = {
-        "boot_log": f"[Aktif Paketler: {', '.join(packages)}] | Risk: L{risk_level} | Güven: %94",
-        "final_decision": "KRİTİK MÜDAHALE GEREKLİ" if risk_level > 5 else "STANDART PROSEDÜR",
-        "analysis": f"Sistem {len(packages)} farklı koldan tehdit algıladı. Tehditlerin odağı: {packages[0]}.",
-        "action_plan": [
-            "0-1h: Tüm sistem çıkışlarını mühürle ve kriz odasını topla.",
-            "1-24h: Yasal bildirimleri yap ve etkilenen birimleri izole et.",
-            "24-72h: Hasar tespiti ve sistem geri yükleme operasyonunu başlat."
-        ],
-        "veto": "LAW_PRO: Mevcut yasal süreç bitmeden dışarıya bilgi sızdırılması VETO edildi."
+    payload = {
+        "deploymentToken": DEPLOYMENT_TOKEN,
+        "deploymentId": DEPLOYMENT_ID,
+        "messages": [{"role": "user", "content": f"DecisionOS v4.0 Protokolü: {incident.text}"}]
     }
-    
-    return brief
 
-import uvicorn
-import os
+    try:
+        # İstek gönderiliyor (Chatbot metodu API Key yerine Token ile çalışır)
+        response = requests.post(url, json=payload)
+        ai_data = response.json()
+        
+        # Gelen cevabı ayıklıyoruz
+        ai_answer = ai_data.get("result", {}).get("content", "AI cevabı oluşturamadı.")
+        
+        return {
+            "boot_log": "[OK] DecisionHub v1.0 AI Core Yayında",
+            "final_decision": "AI STRATEJİK ANALİZ",
+            "analysis": ai_answer,
+            "action_plan": ["Aşağıdaki AI analizini uygulayın."],
+            "veto": "AI Denetimi Aktif"
+        }
+    except Exception as e:
+        return {
+            "boot_log": "❌ BAĞLANTI HATASI",
+            "final_decision": "OFFLINE",
+            "analysis": f"Sistem hatası: {str(e)}",
+            "action_plan": ["Bağlantıyı kontrol edin."],
+            "veto": "Veto Yetkisi Devre Dışı"
+        }
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
