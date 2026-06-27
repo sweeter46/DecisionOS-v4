@@ -5,13 +5,13 @@ import requests
 import os
 import uvicorn
 import json
+import re
 
 app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -22,7 +22,7 @@ class Incident(BaseModel):
 @app.post("/analyze")
 async def analyze(incident: Incident):
     DEPLOYMENT_TOKEN = "f3baa2a32be542f9af98a81aa71da611"
-    DEPLOYMENT_ID = "63a2ddb70" 
+    DEPLOYMENT_ID = "685958564177fe899cd68b64e5f7fe1b" 
     
     url = "https://api.abacus.ai/api/v0/getChatResponse"
     payload = {
@@ -36,36 +36,32 @@ async def analyze(incident: Incident):
         ai_data = response.json()
         raw_content = ai_data.get("result", {}).get("content", "")
 
-        # --- AKILLI JSON PARÇALAYICI ---
+        # --- GÜÇLENDİRİLMİŞ JSON AYIKLAYICI ---
         try:
-            # AI'dan gelen metnin içindeki JSON'u bul ve temizle
-            json_str = raw_content
-            if "```json" in json_str:
-                json_str = json_str.split("```json")[1].split("```")[0]
-            elif "```" in json_str:
-                json_str = json_str.split("```")[1].split("```")[0]
-            
-            parsed_ai = json.loads(json_str.strip())
-            
-            return {
-                "boot_log": parsed_ai.get("boot_log", "[SYSTEM_SYNC] AI Aktif"),
-                "final_decision": parsed_ai.get("final_decision", "ANALİZ EDİLDİ"),
-                "analysis": parsed_ai.get("analysis", ""),
-                "action_plan": parsed_ai.get("action_plan", ["Plan metin içinde belirtildi."]),
-                "veto": parsed_ai.get("veto", "VETO Kararı Belirlendi")
-            }
+            # Metnin içinden JSON objesini cımbızla çekiyoruz
+            json_match = re.search(r'\{.*\}', raw_content, re.DOTALL)
+            if json_match:
+                parsed_ai = json.loads(json_match.group())
+                return {
+                    "boot_log": parsed_ai.get("boot_log", "[OK] AI Core Synced"),
+                    "final_decision": parsed_ai.get("final_decision", "KARAR ÜRETİLDİ"),
+                    "analysis": parsed_ai.get("analysis", "Analiz metni sentezleniyor..."),
+                    "action_plan": parsed_ai.get("action_plan", ["Plan metin içinde mevcut."]),
+                    "veto": parsed_ai.get("veto", "VETO Denetimi Aktif")
+                }
+            raise Exception("JSON not found")
         except:
-            # Eğer AI JSON döndürmezse, her şeyi Analysis kutusuna dök (Güvenli Mod)
+            # AI JSON göndermezse, her şeyi Analysis kutusuna döküyoruz
             return {
-                "boot_log": "[RAW_DATA_MODE] Detaylı Sentez",
+                "boot_log": "[RAW_MODE] Direkt Veri Akışı",
                 "final_decision": "DETAYLI STRATEJİ",
-                "analysis": raw_content,
-                "action_plan": ["0-1h: Yukarıdaki analizi inceleyin.", "24h: Kriz masasını bilgilendirin."],
-                "veto": "Analiz metninde detaylandırılmıştır."
+                "analysis": raw_content, # Tüm metni buraya koyduk
+                "action_plan": ["0-1h: Yukarıdaki analizi detaylıca inceleyin."],
+                "veto": "Analiz metninde yasaklı işlemler belirtilmiştir."
             }
             
     except Exception as e:
-        return {"boot_log": "❌ HATA", "final_decision": "OFFLINE", "analysis": str(e), "action_plan": [], "veto": "Hata"}
+        return {"boot_log": "❌ HATA", "final_decision": "OFFLINE", "analysis": str(e), "action_plan": [], "veto": "Bağlantı Hatası"}
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
