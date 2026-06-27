@@ -112,39 +112,46 @@
     </div>
 
     <script>
-        const startBtn = document.getElementById('startBtn');
-        const userInput = document.getElementById('userInput');
-        const resultArea = document.getElementById('resultArea');
-        const reportContent = document.getElementById('reportContent');
-        const bootLog = document.getElementById('bootLog');
+            const startBtn = document.getElementById('startBtn');
+            const userInput = document.getElementById('userInput');
+            const resultArea = document.getElementById('resultArea');
+            const reportContent = document.getElementById('reportContent');
 
-        startBtn.addEventListener('click', async () => {
-            const text = userInput.value.trim();
-            if (text.length < 5) return alert("Lütfen geçerli bir senaryo girin.");
+            startBtn.addEventListener('click', async () => {
+                const text = userInput.value.trim();
+                if (text.length < 5) return alert("Lütfen metin girin.");
 
-            resultArea.style.display = 'block';
-            reportContent.innerText = "Yapay zeka verileri tarıyor, hukuk ve finans paketleri işleniyor...";
-            bootLog.innerText = "⚙️ ANALİZ BAŞLATILDI";
+                resultArea.style.display = 'block';
+                reportContent.innerText = "🚨 Abacus AI Core üzerinden kriz senaryosu sentezleniyor... (Doğrudan Bağlantı Modu)";
 
-            try {
-                const response = await fetch('https://decisionos-v4.onrender.com/analyze', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ text: text })
-                });
+                try {
+                    // RENDER YERİNE DOĞRUDAN ABACUS API'SİNE SORUYORUZ
+                    const response = await fetch('https://api.abacus.ai/api/v0/getChatResponse', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            "deploymentToken": "f3baa2a32be542f9af98a81aa71da611",
+                            "deploymentId": "63a2ddb70",
+                            "messages": [{"role": "user", "content": text}]
+                        })
+                    });
 
-                const data = await response.json();
-                
-                // Sunucudan ne gelirse gelsin (report, result veya hata mesajı) ekrana basıyoruz
-                const finalResult = data.report || data.raw_ai_answer || data.result || JSON.stringify(data, null, 2);
-                
-                bootLog.innerText = "⚙️ STRATEJİK RAPOR OLUŞTURULDU";
-                reportContent.innerText = finalResult;
+                    const data = await response.json();
+                    console.log("Abacus Yanıtı:", data);
 
-            } catch (error) {
-                reportContent.innerText = "Hata: Sunucu bağlantısı kurulamadı. Render uyanıyor olabilir, lütfen 30sn sonra tekrar deneyin.";
-            }
-        });
+                    if (data.success && data.result) {
+                        reportContent.style.whiteSpace = "pre-wrap";
+                        reportContent.innerText = data.result.content;
+                    } else {
+                        reportContent.innerText = "Hata: Abacus API ile bağlantı kurulamadı. " + JSON.stringify(data);
+                    }
+
+                } catch (error) {
+                    reportContent.innerText = "Bağlantı Hatası: Tarayıcı güvenliği (CORS) veya API hatası oluştu.";
+                }
+            });
     </script>
 </body>
 </html>
