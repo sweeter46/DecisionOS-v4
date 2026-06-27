@@ -38,20 +38,20 @@
     </div>
 
     <script>
-            document.addEventListener('DOMContentLoaded', () => {
+                document.addEventListener('DOMContentLoaded', () => {
             const startBtn = document.getElementById('startBtn');
             const textArea = document.querySelector('textarea');
             const bootLog = document.getElementById('bootLog');
             const resultArea = document.getElementById('resultArea');
-            const analysisText = document.getElementById('analysisText');
+            const analysisText = document.getElementById('analysisText'); // undefined yazan yer
 
             startBtn.addEventListener('click', async () => {
                 const userInput = textArea.value.trim();
                 if (userInput.length < 5) return alert("Lütfen metin girin.");
 
                 resultArea.classList.remove('hidden');
-                bootLog.innerText = "⚙️ AI Sentezleme Birimi Bağlanıyor...";
-                analysisText.innerText = "Yapay zeka analiz ediyor, lütfen bekleyin...";
+                bootLog.innerText = "⚙️ Protokol Başlatıldı. AI Verisi Sentezleniyor...";
+                analysisText.innerText = "AI cevap üretiyor, bu işlem 5-10 saniye sürebilir...";
 
                 try {
                     const response = await fetch('https://decisionos-v4.onrender.com/analyze', {
@@ -61,18 +61,24 @@
                     });
 
                     const data = await response.json();
-                    
-                    // AI'dan gelen ham cevabı Analiz kutusuna yazdır
+                    console.log("Sunucudan Gelen Ham Veri:", data);
+
+                    // --- GARANTİCİ VERİ OKUMA ---
+                    // Eğer data.raw_ai_answer yoksa, gelen objenin içindeki ilk değeri bulmaya çalış
+                    const finalContent = data.raw_ai_answer || data.result || Object.values(data)[0];
+
                     bootLog.innerText = "⚙️ ANALİZ TAMAMLANDI";
                     document.getElementById('finalDecision').innerText = "STRATEJİK RAPOR OLUŞTURULDU";
-                    analysisText.innerText = data.raw_ai_answer; // TÜM CEVAP BURAYA GELİR
                     
-                    // Diğer kutuları temizle veya kısa bilgi yaz
-                    document.getElementById('actionPlanList').innerHTML = "<li>Detaylı aksiyon planı yukarıdaki raporun içindedir.</li>";
-                    document.getElementById('vetoText').innerText = "Raporun sonundaki yasal uyarıları inceleyin.";
+                    // Eğer gelen veri hala undefined ise hata mesajı bas
+                    analysisText.innerText = finalContent || "Cevap formatı çözülemedi, ancak bağlantı başarılı!";
+                    
+                    document.getElementById('actionPlanList').innerHTML = "<li>Aksiyon planı yukarıdaki raporun içindedir.</li>";
+                    document.getElementById('vetoText').innerText = "Rapor içeriğini inceleyin.";
 
                 } catch (error) {
-                    analysisText.innerText = "Hata: " + error.message;
+                    console.error("HATA:", error);
+                    analysisText.innerText = "Bağlantı Hatası: Sunucuya ulaşılamadı.";
                 }
             });
         });
