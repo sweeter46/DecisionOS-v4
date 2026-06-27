@@ -100,6 +100,11 @@
 <body>
     <div class="dashboard">
         <h1>DecisionOS <span style="font-weight:300; font-size:14px; color:#888;">v4.0 Prometheus</span></h1>
+
+            <div id="statusLight" style="font-size: 10px; color: #555; margin-bottom: 15px; font-family: 'JetBrains Mono';">
+                ● SINYAL: <span id="statusText">V4.0.5 - READY</span>
+            </div>
+
         <p class="subtitle">Kriz senaryosunu girin, AI stratejinizi sentezlesin.</p>
         
         <textarea id="userInput" placeholder="Dubai offshore transferi, veri sızıntısı veya fidye saldırısı... Problemi detaylandırın."></textarea>
@@ -112,25 +117,26 @@
     </div>
 
     <script>
-            const startBtn = document.getElementById('startBtn');
+                    const startBtn = document.getElementById('startBtn');
             const userInput = document.getElementById('userInput');
             const resultArea = document.getElementById('resultArea');
             const reportContent = document.getElementById('reportContent');
+            const statusText = document.getElementById('statusText');
 
             startBtn.addEventListener('click', async () => {
                 const text = userInput.value.trim();
-                if (text.length < 5) return alert("Lütfen metin girin.");
+                if (text.length < 5) return alert("Senaryo girmelisiniz.");
 
+                // Görsel geri bildirim
                 resultArea.style.display = 'block';
-                reportContent.innerText = "🚨 Abacus AI Core üzerinden kriz senaryosu sentezleniyor... (Doğrudan Bağlantı Modu)";
+                statusText.innerText = "SENTEZLENİYOR...";
+                statusText.style.color = "#ffaa00"; // Sarı
+                reportContent.innerText = "Abacus AI üzerinden veriler çekiliyor...";
 
                 try {
-                    // RENDER YERİNE DOĞRUDAN ABACUS API'SİNE SORUYORUZ
                     const response = await fetch('https://api.abacus.ai/api/v0/getChatResponse', {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
+                        headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             "deploymentToken": "f3baa2a32be542f9af98a81aa71da611",
                             "deploymentId": "63a2ddb70",
@@ -139,17 +145,22 @@
                     });
 
                     const data = await response.json();
-                    console.log("Abacus Yanıtı:", data);
 
                     if (data.success && data.result) {
+                        statusText.innerText = "ONLINE - VERİ ALINDI";
+                        statusText.style.color = "#00ff88"; // Yeşil
                         reportContent.style.whiteSpace = "pre-wrap";
                         reportContent.innerText = data.result.content;
                     } else {
-                        reportContent.innerText = "Hata: Abacus API ile bağlantı kurulamadı. " + JSON.stringify(data);
+                        statusText.innerText = "API HATASI";
+                        statusText.style.color = "#ff4757"; // Kırmızı
+                        reportContent.innerText = "Hata detayı: " + JSON.stringify(data);
                     }
 
                 } catch (error) {
-                    reportContent.innerText = "Bağlantı Hatası: Tarayıcı güvenliği (CORS) veya API hatası oluştu.";
+                    statusText.innerText = "CORS / BAĞLANTI HATASI";
+                    statusText.style.color = "#ff4757";
+                    reportContent.innerText = "Tarayıcı API güvenliği engeli veya bağlantı sorunu. \nDetay: " + error.message;
                 }
             });
     </script>
