@@ -8,7 +8,7 @@ import json
 
 app = FastAPI()
 
-# CORS Ayarları: Web sitesinin sunucuya erişmesine izin verir
+# CORS Ayarları: Web sitesinin sunucuyla güvenli iletişim kurmasını sağlar.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -23,7 +23,7 @@ class Incident(BaseModel):
 async def analyze(incident: Incident):
     url = "https://api.abacus.ai/api/v0/getChatResponse"
     
-    # Abacus'un kabul ettiği en kararlı mesaj formatı
+    # Abacus AI'nın beklediği en güncel mesaj listesi formatı
     messages_list = [{"is_user": True, "text": incident.text}]
     
     payload = {
@@ -33,43 +33,48 @@ async def analyze(incident: Incident):
     }
 
     try:
-        # İLK DENEME: Standart liste gönderimi
-        response = requests.post(url, json=payload, timeout=35)
+        # İSTEK GÖNDERİMİ
+        response = requests.post(url, json=payload, timeout=40)
         ai_data = response.json()
         
-        # OTOMATİK DÜZELTME: Eğer liste hatası verirse formatı değiştirip tekrar dene
+        # OTOMATİK FORMAT DÜZELTME (Eğer Abacus liste hatası verirse)
         if ai_data.get("error") and "must be a list" in str(ai_data.get("error")):
             payload["messages"] = json.dumps(messages_list) 
-            response = requests.post(url, json=payload, timeout=35)
+            response = requests.post(url, json=payload, timeout=40)
             ai_data = response.json()
 
-        # VERİ YAKALAMA SİSTEMİ
+        # VERİ AYIKLAMA MOTORU (SCREENSHOT_50 ANALİZİNE GÖRE)
         if ai_data.get("success") == True:
             res = ai_data.get("result", {})
+            messages = res.get("messages", [])
             
-            # Abacus'un cevabı koyabileceği tüm olası anahtarları tek tek kontrol ediyoruz
-            final_report = (
-                res.get("content") or 
-                res.get("text") or 
-                res.get("response") or 
-                res.get("answer") or
-                (res if isinstance(res, str) else None)
-            )
-
-            # Eğer yukarıdakilerin hiçbiri dolu değilse, ham veriyi analiz etmemiz için gönder
+            final_report = ""
+            
+            # Mesajlar listesini tara ve AI'nın cevabını (is_user: False olan) bul
+            for msg in messages:
+                if msg.get("is_user") == False:
+                    # AI'nın metnini al
+                    final_report = msg.get("text") or msg.get("content")
+                    break
+            
+            # Eğer listede bulamazsak klasik anahtarları dene
             if not final_report:
-                final_report = f"Bağlantı kuruldu ancak rapor formatı farklı. Ham Veri: {str(ai_data)}"
+                final_report = res.get("content") or res.get("text") or res.get("response") or str(res)
+
+            # TEMİZLİK: Markdown kutucuklarını ve JSON kalıntılarını sil (Daha şık bir görünüm için)
+            final_report = final_report.replace("```json", "").replace("```", "").strip()
             
             return {"report": final_report}
+        
         else:
-            # Abacus direkt hata döndürürse
-            error_detail = ai_data.get("error") or "Bilinmeyen Abacus Hatası"
-            return {"report": f"Abacus Sistem Yanıtı: {error_detail}"}
+            # Hata durumunda Abacus'tan gelen mesajı göster
+            return {"report": f"Abacus Sistem Yanıtı: {ai_data.get('error')}"}
             
     except Exception as e:
-        return {"report": f"Sunucu tarafında bir hata oluştu: {str(e)}"}
+        # Sunucu tarafında oluşabilecek genel hatalar
+        return {"report": f"Strateji Sentezlenirken Hata Oluştu: {str(e)}"}
 
 if __name__ == "__main__":
-    # Render'ın portunu otomatik ayarla
+    # Render'ın port yönetim sistemi
     port = int(os.environ.get("PORT", 8000))
     uvicorn.run(app, host="0.0.0.0", port=port)
