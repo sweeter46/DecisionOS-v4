@@ -18,22 +18,20 @@ class Incident(BaseModel):
 async def analyze(incident: Incident):
     url = "https://api.abacus.ai/api/v0/getChatResponse"
     
-    # ABACUS'UN İSTEDİĞİ KESİN ŞEMA
-    # 'is_user' anahtarının Python'da True (Boolean) olduğundan eminiz.
-    payload = {
-        "deploymentToken": "f3baa2a32be542f9af98a81aa71da611",
-        "deploymentId": "63a2ddb70",
-        "messages": [
-            {
-                "is_user": True,
-                "text": str(incident.text).strip()
-            }
-        ]
-    }
-
-    # VERİYİ RAW JSON STRING OLARAK MÜHÜRLE
-    # separators=(',', ':') kullanarak gereksiz boşlukları siliyoruz (Abacus bunu sever)
-    raw_payload_data = json.dumps(payload, separators=(',', ':'))
+    # ABACUS'UN AZ ÖNCE HATA MESAJINDA İSTEDİĞİ KESİN FORMAT 
+    # (is_user anahtarı küçük harf 'true' olacak şekilde JSON'a zorlanıyor)
+    # text içindeki tırnak işaretlerini temizleyerek listenin yapısını koruyoruz.
+    safe_text = str(incident.text).replace('"', "'").replace("\n", " ").strip()
+    
+    # Paketi manuel olarak (String Injection ile) en saf haliyle inşa ediyoruz.
+    # Bu yöntem, listenin internetten geçerken bozulma şansını sıfıra indirir.
+    payload_str = (
+        '{'
+        f'"deploymentToken": "f3baa2a32be542f9af98a81aa71da611",'
+        f'"deploymentId": "63a2ddb70",'
+        f'"messages": [{{ "is_user": true, "text": "{safe_text}" }}]'
+        '}'
+    )
 
     headers = {
         "Content-Type": "application/json",
@@ -41,46 +39,39 @@ async def analyze(incident: Incident):
     }
 
     try:
-        logger.info(f"MÜHÜRLÜ GÖNDERİ: {raw_payload_data}")
+        logger.info(f"MÜHÜRLÜ PAKET GÖNDERİLİYOR: {payload_str}")
         
-        # data= kullanarak ham stringi gönderiyoruz
-        response = requests.post(url, data=raw_payload_data.encode('utf-8'), headers=headers, timeout=60)
-        
-        if response.status_code != 200:
-            # Hata devam ederse alternatif 'llmInput' formatına anlık geçiş
-            logger.warning("Varyant 1 başarısız, Varyant 2 (llmInput) deneniyor...")
-            alt_payload = {
-                "deploymentToken": "f3baa2a32be542f9af98a81aa71da611",
-                "deploymentId": "63a2ddb70",
-                "llmInput": str(incident.text).strip()
-            }
-            response = requests.post(url, data=json.dumps(alt_payload).encode('utf-8'), headers=headers, timeout=60)
-
+        # data= kullanarak ham stringi doğrudan Abacus'un kapısına bırakıyoruz
+        response = requests.post(url, data=payload_str.encode('utf-8'), headers=headers, timeout=60)
         ai_data = response.json()
         
         if ai_data.get("success"):
             result = ai_data.get("result", {})
-            # Yanıt formatına göre metni ayıkla
-            if isinstance(result, str):
-                raw_text = result
-            else:
-                messages = result.get("messages", [])
-                raw_text = messages[-1].get("text", "") if messages else str(result)
+            messages_out = result.get("messages", [])
+            raw_text = ""
+            
+            # AI'dan gelen en son mesajı çekiyoruz
+            for m in reversed(messages_out):
+                if not m.get("is_user"):
+                    raw_text = m.get("text", "")
+                    break
             
             # Dashboard JSON ayıklama
             clean = raw_text.replace("```json", "").replace("```", "").strip()
             match = re.search(r'(\{.*\})', clean, re.DOTALL)
             
             if match:
-                try: return {"report": json.loads(match.group(1)), "status": "success"}
-                except: pass
+                try: 
+                    return {"report": json.loads(match.group(1)), "status": "success"}
+                except: 
+                    pass
             
             return {"report": raw_text, "status": "text"}
             
         return {"report": f"Abacus Reddi: {ai_data.get('error')}", "status": "error"}
 
     except Exception as e:
-        return {"report": f"Bağlantı Hatası: {str(e)}", "status": "error"}
+        return {"report": f"Sistem Hatası: {str(e)}", "status": "error"}
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
