@@ -21,33 +21,41 @@ class Incident(BaseModel):
 
 @app.post("/analyze")
 async def analyze(incident: Incident):
+    # Senin getirdiğin analizdeki OpenAI uyumlu endpoint ve formatı deniyoruz
     url = "https://api.abacus.ai/api/v0/getChatResponse"
     
-    # LİSTE (LIST) OLDUĞUNU GARANTİLEMEK İÇİN DEĞİŞKENE ATIYORUZ
-    final_messages = []
-    final_messages.append({
-        "is_user": True,
-        "text": str(incident.text)
-    })
-    
+    # KESİN LİSTE YAPISI VE STANDART ROLE/CONTENT FORMATI
     payload = {
         "deploymentToken": "f3baa2a32be542f9af98a81aa71da611",
         "deploymentId": "63a2ddb70",
-        "messages": final_messages
+        "messages": [
+            {
+                "role": "user",
+                "content": str(incident.text)
+            }
+        ]
+    }
+
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer f3baa2a32be542f9af98a81aa71da611" # Token'ı hem içerde hem başlıkta gönderiyoruz
     }
 
     try:
-        response = requests.post(url, json=payload, timeout=60)
+        # json=payload yerine manuel data=json.dumps kullanımı (Bypass yöntemi)
+        response = requests.post(url, data=json.dumps(payload), headers=headers, timeout=60)
         ai_data = response.json()
         
         if ai_data.get("success"):
             messages = ai_data["result"].get("messages", [])
             raw_text = ""
             for m in reversed(messages):
-                if not m.get("is_user"):
-                    raw_text = m.get("text", "")
+                # Hem 'content' hem 'text' hem 'is_user' kontrolüyle yanıtı bul
+                if not m.get("is_user") or m.get("role") == "assistant":
+                    raw_text = m.get("content") or m.get("text") or ""
                     break
             
+            # JSON Ayıklama
             clean = raw_text.replace("```json", "").replace("```", "").strip()
             match = re.search(r'(\{.*\})', clean, re.DOTALL)
             
@@ -59,7 +67,9 @@ async def analyze(incident: Incident):
             
             return {"report": raw_text, "status": "text"}
         
-        return {"report": f"Abacus Hatası: {ai_data.get('error')}", "status": "error"}
+        # Abacus'un hata detayını yakalayalım
+        error_msg = ai_data.get('error', 'Bilinmeyen Hata')
+        return {"report": f"Abacus Hatası: {error_msg}", "status": "error"}
     except Exception as e:
         return {"report": f"Sistem hatası: {str(e)}", "status": "error"}
 
