@@ -9,7 +9,12 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("decisionos")
 
 app = FastAPI()
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"]
+)
 
 class Incident(BaseModel):
     text: str
@@ -17,36 +22,37 @@ class Incident(BaseModel):
 @app.post("/analyze")
 async def analyze(incident: Incident):
     url = "https://api.abacus.ai/api/v0/getChatResponse"
-    
-    # KESİN VE DEĞİŞMEZ ŞABLON (Abacus'un "is_user" ve "text" kuralına tam uyum)
-    # Tırnak işaretlerini kaçış karakterleriyle mühürleyerek listenin yapısını koruyoruz.
+
     payload = {
         "deploymentToken": "f3baa2a32be542f9af98a81aa71da611",
         "deploymentId": "63a2ddb70",
         "messages": [
             {
                 "is_user": True,
-                "text": str(incident.text).strip()
+                "text": incident.text.strip()
             }
         ]
     }
 
-    headers = {
-        "Content-Type": "application/json"
-    }
-
+    # ✅ DÜZELTME: data= yerine json= kullan
+    # requests kütüphanesi json= parametresiyle otomatik olarak:
+    # 1) Content-Type: application/json header'ı ekler
+    # 2) Veriyi doğru JSON formatında gönderir
+    # 3) messages listesini bozMaz
     try:
-        # json.dumps() içindeki separators parametresi, Abacus'un sevmediği 
-        # tüm o 'gereksiz boşlukları' siler ve paketi 'saf bir liste' haline getirir.
-        mühürlü_paket = json.dumps(payload, separators=(',', ':'))
-        
-        logger.info(f"FİNAL GÖNDERİ: {mühürlü_paket}")
-        
-        # data= kullanarak ham veriyi hiç bozmadan doğrudan iletiyoruz.
-        response = requests.post(url, data=mühürlü_paket.encode('utf-8'), headers=headers, timeout=60)
-        
+        logger.info(f"GÖNDERİLEN PAYLOAD: {json.dumps(payload, ensure_ascii=False)}")
+
+        response = requests.post(
+            url,
+            json=payload,          # ← SADECE BU DEĞİŞTİ
+            timeout=60
+        )
+
+        logger.info(f"HTTP DURUM KODU: {response.status_code}")
+        logger.info(f"HAM YANIT: {response.text[:500]}")
+
         ai_data = response.json()
-        
+
         if ai_data.get("success"):
             messages = ai_data["result"].get("messages", [])
             raw_text = ""
@@ -54,19 +60,22 @@ async def analyze(incident: Incident):
                 if not m.get("is_user"):
                     raw_text = m.get("text", "")
                     break
-            
+
             clean = raw_text.replace("```json", "").replace("```", "").strip()
             match = re.search(r'(\{.*\})', clean, re.DOTALL)
-            
+
             if match:
-                try: return {"report": json.loads(match.group(1)), "status": "success"}
-                except: pass
-            
+                try:
+                    return {"report": json.loads(match.group(1)), "status": "success"}
+                except json.JSONDecodeError:
+                    pass
+
             return {"report": raw_text, "status": "text"}
-            
+
         return {"report": f"Abacus Reddi: {ai_data.get('error')}", "status": "error"}
 
     except Exception as e:
+        logger.error(f"HATA: {str(e)}")
         return {"report": f"Bağlantı Hatası: {str(e)}", "status": "error"}
 
 if __name__ == "__main__":
