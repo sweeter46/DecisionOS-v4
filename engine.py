@@ -2,9 +2,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import requests
+import json
 import os
 import uvicorn
-import json
 import re
 
 app = FastAPI()
@@ -23,48 +23,57 @@ class Incident(BaseModel):
 async def analyze(incident: Incident):
     url = "https://api.abacus.ai/api/v0/getChatResponse"
     
-    # ABACUS'UN "KESİN" İSTEDİĞİ FORMAT (is_user ve text)
-    messages_payload = [
-        {
-            "is_user": True,
-            "text": str(incident.text)
-        }
-    ]
+    # DİĞER YAPAY ZEKANIN VE ABACUS'UN İSTEDİĞİ MANUEL LİSTE (JSON ARRAY)
+    # is_user ve text anahtarlarını (keys) kesinlikle küçük harf ve doğru tipte veriyoruz.
+    msg_list = []
+    msg_list.append({
+        "is_user": True,
+        "text": str(incident.text)
+    })
     
     payload = {
         "deploymentToken": "f3baa2a32be542f9af98a81aa71da611",
         "deploymentId": "63a2ddb70",
-        "messages": messages_payload
+        "messages": msg_list
+    }
+
+    # DİĞER YZ'NİN DEDİĞİ GİBİ: KESİN JSON STRINGIFY (json.dumps)
+    json_payload = json.dumps(payload)
+    
+    headers = {
+        "Content-Type": "application/json",
+        "Accept": "application/json"
     }
 
     try:
-        # json parametresi requests kütüphanesinde listeyi otomatik JSON array'e çevirir.
-        response = requests.post(url, json=payload, timeout=60)
+        # DATA= kullanarak ham string gönderiyoruz, requests'in veriyi değiştirmesine izin vermiyoruz.
+        response = requests.post(url, data=json_payload, headers=headers, timeout=60)
         ai_data = response.json()
         
         if ai_data.get("success"):
-            messages_from_api = ai_data["result"].get("messages", [])
+            messages = ai_data["result"].get("messages", [])
             raw_text = ""
-            for m in reversed(messages_from_api):
+            for m in reversed(messages):
                 if not m.get("is_user"):
                     raw_text = m.get("text", "")
                     break
             
+            # Dashboard JSON ayıklama
             clean = raw_text.replace("```json", "").replace("```", "").strip()
             match = re.search(r'(\{.*\})', clean, re.DOTALL)
             
             if match:
                 try:
                     return {"report": json.loads(match.group(1)), "status": "success"}
-                except:
-                    pass
+                except: pass
             
             return {"report": raw_text, "status": "text"}
         
-        # API'den gelen ham hata mesajını döndür ki görebilelim
+        # Abacus'tan gelen hata mesajını doğrudan ekrana basıyoruz
         return {"report": f"Abacus Hatası: {ai_data.get('error')}", "status": "error"}
+    
     except Exception as e:
-        return {"report": f"Sunucu Hatası: {str(e)}", "status": "error"}
+        return {"report": f"Proxy Sunucu Hatası: {str(e)}", "status": "error"}
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
