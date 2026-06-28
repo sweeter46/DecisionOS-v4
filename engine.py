@@ -12,7 +12,6 @@ class Incident(BaseModel):
 @app.post("/analyze")
 async def analyze(incident: Incident):
     url = "https://api.abacus.ai/api/v0/getChatResponse"
-    
     payload = {
         "deploymentToken": "f3baa2a32be542f9af98a81aa71da611",
         "deploymentId": "63a2ddb70",
@@ -22,37 +21,29 @@ async def analyze(incident: Incident):
     try:
         response = requests.post(url, json=payload, timeout=90)
         ai_data = response.json()
-        
-        # Abacus'tan gelen mesajı al
-        raw_response = next((m for m in reversed(ai_data["result"]["messages"]) if not m.get("is_user")), {})
-        text_content = raw_response.get("text", "")
+        raw_msg = next((m for m in reversed(ai_data["result"]["messages"]) if not m.get("is_user")), {}).get("text", "")
 
-        # --- KRİTİK GÜNCELLEME: FILES İÇERİĞİNİ YAKALA ---
         try:
-            # Eğer text_content bir JSON string ise onu objeye çevir
-            inner_json = json.loads(text_content)
+            # JSON paketini aç
+            inner = json.loads(raw_msg)
+            full_content = inner.get("analysis", "")
             
-            # Ana analiz metnini al
-            final_text = inner_json.get("analysis", "")
+            # KRİTİK: Eğer dosyalar (files) varsa içeriğini ana metne ekle
+            if "files" in inner and len(inner["files"]) > 0:
+                for file in inner["files"]:
+                    full_content += f"\n\n{file.get('content', '')}"
             
-            # EĞER FILES VARSA, ONLARI DA ANALİZE EKLE (GRAFİK BURADA OLABİLİR!)
-            if "files" in inner_json and len(inner_json["files"]) > 0:
-                for file in inner_json["files"]:
-                    final_text += f"\n\n### EK DOSYA İÇERİĞİ ({file.get('path')}):\n{file.get('content')}"
-            
-            # Dashboard'a birleştirilmiş metni yolla
             return {
                 "report": {
-                    "final_decision": inner_json.get("final_decision", "ANALİZ"),
-                    "analysis": final_text,
-                    "action_plan": inner_json.get("action_plan", {"0-1h": []}),
-                    "confidence": inner_json.get("confidence", 0.95)
+                    "final_decision": inner.get("final_decision", "ANALİZ"),
+                    "analysis": full_content,
+                    "confidence": inner.get("confidence", 0.95)
                 },
                 "status": "success"
             }
         except:
-            # Eğer JSON parse edilemezse ham metni yolla
-            return {"report": {"analysis": text_content}, "status": "partial"}
+            # Ham metin gelirse direkt yolla
+            return {"report": {"analysis": raw_msg}, "status": "partial"}
 
     except Exception as e:
         return {"report": str(e), "status": "error"}
