@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
+# Loglama Ayarları
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("decisionos")
 
@@ -17,21 +18,28 @@ async def analyze(incident: Incident):
     url = "https://api.abacus.ai/api/v0/getChatResponse"
     user_text = str(incident.text).strip()
 
-    # AI'yı Grafik ve Tablo kodunu vermeye zorlayan "Prompt Engineering"
+    # AI'yı ham veri üretmeye zorlayan "Ultimate Strict Instruction"
+    # Tablo ve Grafiklerin ayrı satırlarda olması gerektiğini vurguluyoruz.
     system_instruction = """
     Sen DecisionOS v4.0 Prometheus çekirdeğisin. 
-    KURAL: Sadece JSON formatında cevap ver.
-    GRAFİK TALEBİNDE: Cevap metninin (action_plan içinde) mutlaka ```chart {JSON_CONFIG} ``` kod bloğunu içermesi ZORUNLUDUR.
-    TABLO TALEBİNDE: Mutlaka Markdown formatında (| Sütun |) tablo üretmelisin.
-    FORMÜL TALEBİNDE: LaTeX $$ formatını kullan.
+    ZORUNLU ÇIKTI KURALLARI:
+    1. SADECE JSON DÖNDÜR.
+    2. TABLO: Tablo verisi istendiğinde, onu mutlaka AŞAĞIDAKİ GİBİ AYRI BİR PARAGRAF olarak Markdown formatında yolla:
+
+       | Başlık | Değer |
+       | :--- | :--- |
+       | Örnek | 100 |
+
+    3. GRAFİK: Grafik istendiğinde, mutlaka ```chart {JSON_CONFIG} ``` kod bloğunu 'analysis' veya 'action_plan' içinde AYRI BİR SATIRDA yolla.
+    4. LaTeX formülleri için $$ ... $$ kullan ve başına/sonuna boş satır koy.
 
     JSON Şeması:
     {
       "final_decision": "string",
-      "analysis": "string (Grafik-Tablo kodlarını buraya veya action_plan'e ekle)",
+      "analysis": "string",
       "action_plan": {"0-1h": [], "1-24h": [], "24-72h": []},
       "confidence": 0.0,
-      "veto": null
+      "veto": "string or null"
     }
     """
 
@@ -49,25 +57,43 @@ async def analyze(incident: Incident):
             messages = ai_data.get("result", {}).get("messages", [])
             raw_text = next((m.get("text", "") for m in reversed(messages) if not m.get("is_user")), "")
 
-            # JSON Temizleme
-            content = raw_text.strip().replace("```json", "").replace("```", "").strip()
+            # --- GELMİŞ GEÇMİŞ EN GÜÇLÜ JSON TEMİZLEME ALGORİTMASI ---
+            content = raw_text.strip()
+            # Markdown kod bloklarını (json) temizle
+            content = content.replace("```json", "").replace("```JSON", "").replace("```", "")
 
             try:
-                final_obj = json.loads(content, strict=False)
+                # 1. Direkt temizlemiş içeriği dene
+                final_obj = json.loads(content.strip(), strict=False)
                 return {"report": final_obj, "status": "success"}
             except:
+                # 2. Regex ile en dıştaki {} objesini yakala
                 match = re.search(r'(\{[\s\S]*\})', content)
                 if match:
                     try:
                         clean_json = match.group(1).replace('\n', ' ').replace('\r', '')
                         parsed = json.loads(clean_json, strict=False)
                         return {"report": parsed, "status": "success"}
-                    except: pass
+                    except:
+                        pass
 
-                return {"report": {"final_decision": "REPAIR_REQUIRED", "analysis": raw_text, "action_plan": {"0-1h": ["Veri parse edilemedi."]}, "confidence": 0.5}, "status": "fail"}
-        return {"report": "API_ERROR", "status": "error"}
+                # 3. Fail-Safe: Bozuk veriyi "analysis" içine gömerek döndür
+                return {
+                    "report": {
+                        "final_decision": "DATA_RECOVERY_MODE", 
+                        "analysis": raw_text,
+                        "action_plan": {"0-1h": ["Veri formatı uyumsuzluğu saptandı."], "1-24h": [], "24-72h": []},
+                        "confidence": 0.3
+                    }, 
+                    "status": "partial"
+                }
+
+        return {"report": "Abacus Sync Error", "status": "error"}
     except Exception as e:
+        logger.error(f"Sunucu Hatası: {str(e)}")
         return {"report": str(e), "status": "error"}
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 8000)))
+    # Render'ın beklediği port ayarı
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run(app, host="0.0.0.0", port=port)
