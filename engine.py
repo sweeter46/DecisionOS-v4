@@ -44,13 +44,14 @@ async def analyze(incident: Incident):
 
     try:
         # Log: Abacus'a tam olarak ne gönderiyoruz?
-        logger.info(f"Abacus'a paket gönderiliyor: {json.dumps(payload)}")
+        logger.info(f"Yollanan JSON: {json.dumps(payload)}")
         
         # 'json=' parametresi listeyi doğrudan JSON array'ine dönüştürür (Kritik nokta)
         response = requests.post(url, json=payload, headers=headers, timeout=60)
         
+        # Eğer hala hata geliyorsa yanıt içeriğini yakala
         if response.status_code != 200:
-            logger.error(f"HATA ALINDI: HTTP {response.status_code} - Yanıt: {response.text}")
+            logger.error(f"Hata Detayı: {response.text}")
             return {"report": f"Abacus Reddi (HTTP {response.status_code}): {response.text}", "status": "error"}
 
         ai_data = response.json()
@@ -77,7 +78,7 @@ async def analyze(incident: Incident):
         return {"report": f"Abacus Hatası: {ai_data.get('error')}", "status": "error"}
 
     except Exception as e:
-        logger.exception("Bağlantı sırasında beklenmedik hata!")
+        logger.exception("Bağlantı sırasında bir hata oluştu")
         return {"report": f"Bağlantı Hatası: {str(e)}", "status": "error"}
 
 if __name__ == "__main__":
