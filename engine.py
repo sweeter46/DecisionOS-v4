@@ -23,7 +23,7 @@ class Incident(BaseModel):
 async def analyze(incident: Incident):
     url = "https://api.abacus.ai/api/v0/getChatResponse"
     
-    # PARAMETRELERİ EN SAF VE KATI LİSTE HALİNDE HAZIRLIYORUZ
+    # ABACUS'UN REDDEDEMEYECEĞİ EN SAF VE KÜÇÜK HARFLİ PARAMETRELER
     payload = {
         "deploymentToken": "f3baa2a32be542f9af98a81aa71da611",
         "deploymentId": "63a2ddb70",
@@ -36,13 +36,12 @@ async def analyze(incident: Incident):
     }
 
     try:
-        # VERİYİ MANUEL OLARAK BYTE DİZİSİNE ÇEVİRİYORUZ
-        raw_json_data = json.dumps(payload).encode('utf-8')
+        # JSON'u en temiz haliyle oluşturuyoruz
+        data = json.dumps(payload).encode('utf-8')
         
-        req = urllib.request.Request(url, data=raw_json_data, method='POST')
+        req = urllib.request.Request(url, data=data, method='POST')
         req.add_header('Content-Type', 'application/json')
         req.add_header('Accept', 'application/json')
-        req.add_header('User-Agent', 'Mozilla/5.0') # Bazı API'ler bot engeli için bunu ister
         
         # API ÇAĞRISI
         with urllib.request.urlopen(req, timeout=60) as response:
@@ -67,9 +66,10 @@ async def analyze(incident: Incident):
             
             return {"report": raw_text, "status": "text"}
             
-        return {"report": f"Abacus Hatası: {ai_data.get('error')}", "status": "error"}
+        return {"report": f"Abacus Reddi: {ai_data.get('error')}", "status": "error"}
 
     except Exception as e:
+        # Eğer yine 400 gelirse Abacus'tan dönen ham cevabı görmeye çalışalım
         return {"report": f"Sistem hatası: {str(e)}", "status": "error"}
 
 if __name__ == "__main__":
