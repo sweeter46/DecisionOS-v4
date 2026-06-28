@@ -21,36 +21,31 @@ async def analyze(incident: Incident):
     try:
         response = requests.post(url, json=payload, timeout=90)
         ai_data = response.json()
-        
-        # Ters çevirip en son AI cevabını alıyoruz
         messages = ai_data.get("result", {}).get("messages", [])
         raw_msg = next((m for m in reversed(messages) if not m.get("is_user")), {}).get("text", "")
 
         try:
-            # JSON paketini açıyoruz
+            # JSON paketini aç
             inner = json.loads(raw_msg)
             full_analysis = inner.get("analysis", "")
             
-            # --- EKLEME: EĞER DOSYALAR VARSA METNE EKLE ---
-            # AI bazen grafik ve tabloyu "files" içine koyar
+            # --- KRİTİK NOKTA: GİZLİ DOSYALARI (GRAPH/TABLE) METNE EKLE ---
+            # AI eğer grafik kodunu "files" içine koyduysa onu metne geri alıyoruz
             if "files" in inner and isinstance(inner["files"], list):
                 for f in inner["files"]:
-                    content = f.get("content", "")
-                    if content:
-                        full_analysis += f"\n\n{content}"
+                    if f.get("content"):
+                        full_analysis += f"\n\n{f.get('content')}"
             
             return {
                 "report": {
                     "final_decision": inner.get("final_decision", "ANALİZ"),
-                    "analysis": full_analysis,
+                    "analysis": full_analysis, # ARTIK GRAFİK BURADA!
                     "confidence": inner.get("confidence", 0.95)
                 },
                 "status": "success"
             }
         except:
-            # JSON değilse ham metni yolla
             return {"report": {"analysis": raw_msg}, "status": "partial"}
-
     except Exception as e:
         return {"report": str(e), "status": "error"}
 
