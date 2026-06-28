@@ -3,78 +3,140 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DecisionOS v6.2 | Universal Intelligence</title>
+    <title>DecisionOS v7.0 | Agentic Intelligence</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- LaTeX Desteği -->
     <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-    <!-- Grafik/Şema Desteği -->
     <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- PDF Export Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
     <script>
-        mermaid.initialize({ 
-            startOnLoad: false, 
-            theme: 'dark',
-            securityLevel: 'loose',
-            fontFamily: 'Inter'
-        });
+        mermaid.initialize({ startOnLoad: false, theme: 'dark', securityLevel: 'loose' });
     </script>
+
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Plus+Jakarta+Sans:wght@700&display=swap');
-        body { background: radial-gradient(circle at top right, #0f172a, #020617); color: #f1f5f9; font-family: 'Inter', sans-serif; min-height: 100vh; }
-        .glass-panel { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 1.5rem; }
-        .ai-input { background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(99, 102, 241, 0.3); outline: none; }
-        .ai-button { background: linear-gradient(135deg, #6366f1, #4f46e5); box-shadow: 0 10px 30px -10px rgba(79, 70, 229, 0.5); }
-        .mermaid { background: rgba(0,0,0,0.3); padding: 1.5rem; border-radius: 1rem; margin: 1rem 0; overflow-x: auto; display: flex; justify-content: center; }
-        .question-card { transition: transform 0.2s ease, border-color 0.2s ease; }
-        .question-card:hover { border-color: rgba(99, 102, 241, 0.5); transform: translateY(-2px); }
-        /* MathJax Scroll Fix */
-        .mjx-container { overflow-x: auto; overflow-y: hidden; max-width: 100%; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;900&family=Plus+Jakarta+Sans:wght@800&display=swap');
+
+        :root { --primary: #6366f1; --accent: #10b981; --bg: #020617; }
+
+        body { 
+            background: radial-gradient(circle at 50% 0%, #1e1b4b 0%, #020617 100%); 
+            color: #f1f5f9; 
+            font-family: 'Inter', sans-serif; 
+            min-height: 100vh;
+        }
+
+        .glass-panel { 
+            background: rgba(15, 23, 42, 0.6); 
+            backdrop-filter: blur(16px); 
+            border: 1px solid rgba(255, 255, 255, 0.08); 
+            border-radius: 2rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .ai-input { 
+            background: rgba(2, 6, 23, 0.4); 
+            border: 1px solid rgba(99, 102, 241, 0.2); 
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .ai-input:focus { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1); }
+
+        .ai-button {
+            background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%);
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .ai-button:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 20px 40px -10px rgba(99, 102, 241, 0.4); }
+
+        .chart-container { background: rgba(0,0,0,0.3); padding: 1.5rem; border-radius: 1.5rem; border: 1px solid rgba(255,255,255,0.05); margin: 1rem 0; }
+
+        .data-table th { background: rgba(99, 102, 241, 0.15); color: #818cf8; padding: 14px; text-align: left; font-size: 0.75rem; text-transform: uppercase; }
+        .data-table td { padding: 14px; border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 0.9rem; }
+
+        .export-btn {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: #10b981;
+            transition: all 0.2s ease;
+        }
+        .export-btn:hover { background: #10b981; color: white; }
+
+        /* PDF Optimize */
+        #report-content { background: transparent; }
     </style>
 </head>
-<body class="p-4 md:p-12">
-    <div class="max-w-7xl mx-auto">
-        <header class="mb-10 flex flex-col md:flex-row justify-between items-end gap-4">
-            <div>
-                <h1 class="text-5xl font-extrabold tracking-tighter">Decision<span class="text-indigo-500">OS</span> <span class="text-xs bg-indigo-500/20 px-2 py-1 rounded text-indigo-400 font-mono">v6.2 FINAL</span></h1>
-                <p class="text-slate-500 mt-2 font-light italic">Universal Multi-Expert Orchestrator & Research Engine</p>
+<body class="p-4 md:p-10 lg:p-16">
+    <div class="max-w-6xl mx-auto">
+        <header class="mb-12 flex flex-col md:flex-row justify-between items-center gap-6">
+            <div class="text-center md:text-left">
+                <h1 class="text-6xl font-black tracking-tight leading-none">
+                    Decision<span class="text-indigo-500 italic">OS</span>
+                </h1>
+                <div class="flex items-center gap-3 mt-3 justify-center md:justify-start">
+                    <span class="h-px w-8 bg-indigo-500/50"></span>
+                    <p class="text-slate-500 font-medium tracking-widest text-[10px] uppercase">v7.0 Agent-Base & PDF Engine</p>
+                </div>
             </div>
-            <div id="status-tag" class="text-[10px] font-bold text-emerald-400 border border-emerald-500/30 px-3 py-1 rounded-full uppercase tracking-widest bg-emerald-500/5">System: Online</div>
+            <div class="flex gap-4">
+                <div id="status-dot" class="flex items-center gap-2 px-4 py-2 glass-panel border-emerald-500/20">
+                    <span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+                    <span class="text-[10px] font-bold text-emerald-400 uppercase tracking-tighter">System: Ready</span>
+                </div>
+            </div>
         </header>
 
-        <div class="glass-panel p-8 mb-10 shadow-2xl">
-            <textarea id="incidentInput" class="w-full h-40 ai-input p-6 rounded-2xl text-slate-200 text-lg mb-6 transition-all focus:ring-2 focus:ring-indigo-500 placeholder:text-slate-600" placeholder="Kriz senaryosu, akademik sınav talebi veya teknik analiz isteğinizi detaylıca girin..."></textarea>
-            <button onclick="analyzeIncident()" id="actionBtn" class="w-full py-5 rounded-2xl ai-button text-white font-bold text-xl active:scale-[0.98] transition-all">INITIALIZE ANALYTICS</button>
-        </div>
+        <main class="glass-panel p-6 md:p-10 mb-12">
+            <div class="relative group">
+                <textarea id="incidentInput" 
+                    class="w-full h-44 ai-input p-6 rounded-3xl text-slate-100 text-lg placeholder:text-slate-600 outline-none scrollbar-hide resize-none" 
+                    placeholder="Görev tanımı yapın (Örn: 'Son çeyrek satış verilerini analiz et ve strateji üret.')"></textarea>
+                <div class="absolute bottom-4 right-4 text-[10px] text-slate-600 font-mono">Agent Mode: Active</div>
+            </div>
 
-        <div id="resultArea" class="hidden space-y-10 pb-20"></div>
+            <button onclick="analyzeIncident()" id="actionBtn" 
+                class="w-full mt-8 py-6 rounded-3xl ai-button text-white font-black text-xl shadow-2xl flex items-center justify-center gap-3">
+                <i class="fas fa-microchip"></i> INITIALIZE INTELLIGENCE
+            </button>
+        </main>
+
+        <!-- Result Section -->
+        <section id="resultArea" class="hidden transition-all duration-700">
+            <!-- Rapor Başı ve Export Butonu Dinamik Gelecek -->
+        </section>
     </div>
 
     <script>
-        // Akıllı Liste Ve Görsel Ayırıcı
         const formatContent = (arr) => {
             let items = Array.isArray(arr) ? arr : [arr];
-
-            // Eğer tek bir string içinde numaralı listeler varsa onları ayır (Soru tespiti)
-            if (items.length === 1 && typeof items[0] === 'string') {
-                const pattern = /(?=\d+[\.\)])/g; 
-                const parts = items[0].split(pattern).filter(p => p.trim().length > 0);
+            if (items.length === 1 && typeof items[0] === 'string' && !items[0].includes("```")) {
+                const parts = items[0].split(/(?=\d+[\.\)])/g).filter(p => p.trim().length > 0);
                 if (parts.length > 1) items = parts;
             }
 
-            return `<div class="space-y-4">
+            return `<div class="space-y-6">
                 ${items.map(item => {
                     const content = item.trim();
-
-                    // Mermaid Grafik Tespiti
-                    if (content.includes("```mermaid") || content.startsWith("graph ") || content.startsWith("sequenceDiagram")) {
+                    if (content.includes("```chart")) {
+                        const canvasId = `chart-${Math.random().toString(36).substr(2, 9)}`;
+                        const configStr = content.replace(/```chart/g, "").replace(/```/g, "").trim();
+                        setTimeout(() => {
+                            try { new Chart(document.getElementById(canvasId), JSON.parse(configStr)); } catch(e) {}
+                        }, 300);
+                        return `<div class="chart-container"><canvas id="${canvasId}"></canvas></div>`;
+                    }
+                    if (content.includes("```mermaid") || content.startsWith("graph ")) {
                         const code = content.replace(/```mermaid/g, "").replace(/```/g, "").trim();
                         return `<div class="mermaid">${code}</div>`;
                     }
-
-                    // Standart Madde veya Soru Kartı
-                    return `
-                        <div class="question-card p-5 bg-white/5 rounded-xl border border-white/10 text-sm text-slate-200 leading-relaxed">
-                            ${content.replace(/\n/g, '<br>')}
-                        </div>`;
+                    if (content.includes("|") && content.includes("---")) {
+                        const rows = content.split("\n").filter(r => r.includes("|"));
+                        return `<div class="overflow-x-auto rounded-2xl border border-white/5 my-4"><table class="data-table w-full"><thead><tr>${rows[0].split("|").filter(c=>c.trim()).map(c=>`<th>${c}</th>`).join('')}</tr></thead><tbody>${rows.slice(2).map(r => `<tr>${r.split("|").filter(c=>c.trim()).map(c=>`<td>${c}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+                    }
+                    return `<div class="p-6 bg-slate-800/20 rounded-3xl border border-white/5 text-slate-300 text-sm leading-relaxed">${content.replace(/\n/g, '<br>')}</div>`;
                 }).join('')}
             </div>`;
         };
@@ -86,9 +148,9 @@
             if(!input.trim()) return;
 
             btn.disabled = true;
-            btn.innerHTML = `<span class="animate-pulse">SYNTHESIZING EXPERT LAYERS...</span>`;
+            btn.innerHTML = `<span class="animate-pulse italic uppercase">Agent processing...</span>`;
             resArea.classList.remove('hidden');
-            resArea.innerHTML = `<div class="glass-panel p-24 text-center text-indigo-300 italic text-xl">Prometheus Kernel is orchestrating 28 modules...</div>`;
+            resArea.innerHTML = `<div class="glass-panel p-20 text-center text-indigo-400 font-mono tracking-widest animate-pulse">GENERATING STRATEGIC ARCHITECTURE...</div>`;
 
             try {
                 const response = await fetch('https://decisionos-v4.onrender.com/analyze', {
@@ -101,73 +163,77 @@
 
                 if(typeof report === 'string') {
                    const match = report.match(/\{[\s\S]*\}/);
-                   report = JSON.parse(match ? match[0] : report);
+                   if(match) report = JSON.parse(match[0]);
                 }
 
                 resArea.innerHTML = `
-                    <div class="glass-panel p-10 md:p-16 border-t-8 border-indigo-600 shadow-2xl">
-                        <div class="mb-12 text-center">
-                            <h2 class="text-5xl font-black text-white tracking-tighter uppercase mb-4">${report.final_decision}</h2>
-                            <div class="h-1 w-24 bg-indigo-500 mx-auto rounded-full mb-6"></div>
-                            <p class="max-w-3xl mx-auto text-slate-400 text-lg italic leading-relaxed">${report.analysis}</p>
+                    <div id="report-content" class="glass-panel p-8 md:p-12 border-b-8 border-indigo-500 shadow-2xl overflow-hidden">
+                        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12 no-print">
+                            <h2 class="text-4xl md:text-5xl font-black text-white uppercase tracking-tighter">${report.final_decision}</h2>
+                            <button onclick="downloadReport()" class="export-btn px-6 py-3 rounded-full text-xs font-black uppercase tracking-widest flex items-center gap-2">
+                                Export PDF Report
+                            </button>
                         </div>
 
                         <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
-                            <!-- Sol Kolon: Aksiyon ve Sorular -->
-                            <div class="lg:col-span-8 space-y-10">
-                                <div class="p-8 bg-slate-900/50 rounded-3xl border border-white/5">
-                                    <h3 class="text-xs font-bold text-indigo-400 uppercase tracking-[0.4em] mb-8 flex items-center gap-2">
-                                        <span class="w-2 h-2 bg-indigo-500 rounded-full animate-ping"></span>
-                                        Primary Output Feed
-                                    </h3>
-                                    ${formatContent(report.action_plan?.["1-24h"] || report.action_plan?.["0-1h"])}
+                            <div class="lg:col-span-8">
+                                <h3 class="text-[10px] font-bold text-indigo-400 uppercase tracking-[0.4em] mb-8">Executive Summary & Output</h3>
+                                <div class="mb-10 text-slate-400 italic text-lg leading-relaxed border-l-2 border-indigo-500/30 pl-6">
+                                    ${report.analysis}
                                 </div>
+                                ${formatContent(report.action_plan?.["1-24h"] || report.action_plan?.["0-1h"])}
                             </div>
 
-                            <!-- Sağ Kolon: Özet ve Risk -->
                             <div class="lg:col-span-4 space-y-6">
-                                <div class="p-6 bg-indigo-500/5 rounded-2xl border border-indigo-500/20">
-                                    <h4 class="text-[10px] font-bold text-slate-500 uppercase mb-4 tracking-widest">Metadata</h4>
-                                    <div class="space-y-4">
-                                        <div class="flex justify-between items-center text-xs">
-                                            <span class="text-slate-400">Confidence</span>
-                                            <span class="text-white font-bold">${(report.confidence || 0.9)*100}%</span>
-                                        </div>
-                                        <div class="w-full bg-slate-800 h-1 rounded-full overflow-hidden">
-                                            <div class="bg-indigo-500 h-full" style="width: ${(report.confidence || 0.9)*100}%"></div>
-                                        </div>
-                                        <p class="text-[10px] text-slate-500 mt-4 leading-relaxed italic">
-                                            ${report.disclaimer || 'Profesyonel danışmanlık uyarısı aktif.'}
-                                        </p>
+                                <div class="p-6 bg-white/5 rounded-3xl border border-white/10">
+                                    <h4 class="text-[10px] font-bold text-slate-500 uppercase mb-4">Precision Metric</h4>
+                                    <div class="flex justify-between items-center text-xs mb-2">
+                                        <span class="text-slate-400">Score</span>
+                                        <span class="text-indigo-400 font-black">${((report.confidence || 0.9)*100).toFixed(0)}%</span>
+                                    </div>
+                                    <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                                        <div class="bg-indigo-500 h-full" style="width: ${(report.confidence || 0.9)*100}%"></div>
                                     </div>
                                 </div>
 
-                                <div class="p-6 bg-rose-500/5 rounded-2xl border border-rose-500/20">
-                                    <h4 class="text-[10px] font-bold text-rose-400 uppercase mb-2 tracking-widest">Veto Status</h4>
-                                    <p class="text-xs text-slate-300 font-light italic">${report.veto || 'Güvenli protokol: İhlal saptanmadı.'}</p>
+                                <div class="p-6 bg-rose-500/5 rounded-3xl border border-rose-500/10 text-[10px] uppercase tracking-widest text-slate-500 leading-relaxed">
+                                    Veto Status: ${report.veto || 'Safe Protocol active'}
                                 </div>
                             </div>
                         </div>
                     </div>
                 `;
 
-                // Render İşlemini Tetikle
                 setTimeout(() => {
                     if (window.MathJax) MathJax.typesetPromise();
-                    if (window.mermaid) {
-                        try {
-                            mermaid.contentLoaded();
-                            mermaid.run();
-                        } catch(err) { console.error("Mermaid Render Error:", err); }
-                    }
+                    if (window.mermaid) { try { mermaid.contentLoaded(); mermaid.run(); } catch(e) {}}
                 }, 500);
 
             } catch (e) {
                 resArea.innerHTML = `<div class="glass-panel p-20 text-red-500 text-center font-bold">SYSTEM OVERLOAD: ${e.message}</div>`;
             } finally {
                 btn.disabled = false;
-                btn.innerHTML = "INITIALIZE ANALYTICS";
+                btn.innerHTML = "INITIALIZE INTELLIGENCE";
             }
+        }
+
+        function downloadReport() {
+            const element = document.getElementById('report-content');
+            const btns = document.querySelectorAll('.no-print');
+
+            const opt = {
+                margin:       0.3,
+                filename:     'DecisionOS_Agent_Report.pdf',
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true, backgroundColor: '#020617' },
+                jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+            };
+
+            // Butonu gizleyip basıyoruz
+            btns.forEach(b => b.style.display = 'none');
+            html2pdf().set(opt).from(element).save().then(() => {
+                btns.forEach(b => b.style.display = 'flex');
+            });
         }
     </script>
 </body>
