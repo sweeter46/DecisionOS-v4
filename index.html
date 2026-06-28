@@ -38,7 +38,7 @@
         <button id="startBtn">STRATEJİK SENTEZİ BAŞLAT</button>
 
         <div id="resultArea" class="report-grid">
-            <!-- Rapor Elemanları Buraya Gelecek -->
+            <!-- Rapor Elemanları Dinamik Gelecek -->
         </div>
     </div>
 
@@ -50,7 +50,7 @@
 
         startBtn.addEventListener('click', async () => {
             const text = userInput.value.trim();
-            if (text.length < 5) return alert("Senaryo giriniz.");
+            if (text.length < 5) return alert("Lütfen senaryo giriniz.");
             
             statusText.innerText = "SENTEZLENİYOR...";
             statusText.style.color = "#ffaa00";
@@ -64,13 +64,12 @@
                 });
                 const data = await response.json();
 
-                if (data.is_json) {
+                if (data.status === "success") {
                     const r = data.report;
                     statusText.innerText = "ANALİZ TAMAMLANDI";
                     statusText.style.color = "#00ff88";
                     resultArea.style.display = 'grid';
 
-                    // Aksiyon planı HTML'ini döngü ile ayrıca oluşturup değişkene atayalım (Daha güvenli)
                     let actionHtml = "";
                     r.action_plan.forEach(p => {
                         const parts = p.split(':');
@@ -81,39 +80,34 @@
                             </div>`;
                     });
 
-                    // Ana Raporu Bas
                     resultArea.innerHTML = `
                         <div class="card full-width" style="border-color: #ff4757">
-                            <span class="risk-badge">RİSK: KRİTİK (L10)</span>
+                            <span class="risk-badge">RİSK: KRİTİK</span>
                             <span class="label">🛑 NİHAİ KARAR VE TALİMAT</span>
                             <p style="font-size:18px; font-weight:600; margin:10px 0; line-height:1.4;">${r.final_decision}</p>
                         </div>
 
                         <div class="card">
-                            <span class="label">📊 STRATEJİK DURUM TABLOSU</span>
-                            <table>
-                                <tr><th>KOMPONENT</th><th>DURUM</th></tr>
-                                <tr><td>SİBER GÜVENLİK</td><td>KONTROL EDİLDİ</td></tr>
-                                <tr><td>FİNANSAL AKIŞ</td><td>HEDEFLENDİ</td></tr>
-                                <tr><td>RİSK YÖNETİMİ</td><td>AKTİF</td></tr>
-                            </table>
-                            <p style="font-size:13px; color:#888; margin-top:15px; line-height:1.6;">${r.analysis}</p>
+                            <span class="label">📊 STRATEJİK ANALİZ</span>
+                            <p style="font-size:13px; color:#ccc; margin-top:10px; line-height:1.6;">${r.analysis}</p>
                         </div>
 
                         <div class="card">
-                            <span class="label">🛠️ ZAMAN ÇİZELGELİ AKSİYON PLANI</span>
-                            <div style="margin-top:10px;">
+                            <span class="label">🛠️ AKSİYON PLANI (TİMELİNE)</span>
+                            <div style="margin-top:15px;">
                                 ${actionHtml}
                             </div>
                         </div>
 
                         <div class="card full-width" style="background: rgba(255,71,87,0.1); border-color:#ff4757;">
-                            <span class="label" style="color:#ff4757;">⚠️ MUTLAK VETO (YASAL ENGEL)</span>
+                            <span class="label" style="color:#ff4757;">⚠️ MUTLAK VETO</span>
                             <p style="margin:0; font-size:14px; color:#ffb8b8; line-height:1.5;">${r.veto}</p>
                         </div>
                     `;
                 } else {
-                    statusText.innerText = "FORMAT HATASI";
+                    statusText.innerText = "DÜZ METİN RAPORU";
+                    resultArea.style.display = 'block';
+                    resultArea.innerHTML = `<div class="card full-width" style="white-space:pre-wrap; font-size:14px; line-height:1.7;">${data.report}</div>`;
                 }
             } catch (e) {
                 statusText.innerText = "BAĞLANTI HATASI";
