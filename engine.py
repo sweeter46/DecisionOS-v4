@@ -18,26 +18,21 @@ class Incident(BaseModel):
 async def analyze(incident: Incident):
     url = "https://api.abacus.ai/api/v0/getChatResponse"
     
-    # EN YALIN VE SAF PAYLOAD
+    # FORMAT D MANTIĞI: Listeyi önce bir stringe çeviriyoruz
+    messages_list = [{"is_user": True, "text": str(incident.text).strip()}]
+    messages_as_string = json.dumps(messages_list) # BURASI KRİTİK: Listeyi metne çevirdik
+    
     payload = {
         "deploymentToken": "f3baa2a32be542f9af98a81aa71da611",
         "deploymentId": "63a2ddb70",
-        "messages": [
-            {
-                "is_user": True,
-                "text": str(incident.text).strip()
-            }
-        ]
+        "messages": messages_as_string # Abacus bunu bu şekilde bekliyor
     }
 
     try:
-        # LOGLAMA: Gönderilen listeyi kontrol et
-        logger.info(f"Yollanan liste yapısı: {payload}")
+        logger.info(f"Format D Paketi Gönderiliyor: {payload}")
         
-        # ALTIN KURAL: Sadece json=payload kullanıyoruz. 
-        # Requests hem header'ı ayarlar hem de listeyi bozmadan iletir.
+        # Requests kütüphanesi json=payload yaparken messages'ı string olarak iletecek
         response = requests.post(url, json=payload, timeout=60)
-        
         ai_data = response.json()
         
         if ai_data.get("success"):
@@ -49,6 +44,7 @@ async def analyze(incident: Incident):
                     raw_text = m.get("text", "")
                     break
             
+            # Dashboard JSON ayıklama
             clean = raw_text.replace("```json", "").replace("```", "").strip()
             match = re.search(r'(\{.*\})', clean, re.DOTALL)
             
