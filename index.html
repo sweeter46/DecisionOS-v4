@@ -3,39 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DecisionOS v5.3 | Prime</title>
+    <title>DecisionOS v5.4 | Final</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono&display=swap" rel="stylesheet">
     <style>
         :root { --bg: #050505; --card: #111; --accent: #0f8; --danger: #f47; }
         body { background: var(--bg); color: #fff; font-family: 'Inter', sans-serif; margin: 0; padding: 20px; }
-        .dashboard { max-width: 900px; margin: 0 auto; background: var(--card); border-radius: 20px; padding: 30px; border: 1px solid #222; }
-        h1 { color: var(--accent); margin: 0; font-size: 28px; }
-        .status { font-family: 'JetBrains Mono'; font-size: 10px; color: #555; margin-bottom: 20px; }
-        textarea { width: 100%; height: 100px; background: #000; border: 1px solid #333; border-radius: 12px; color: #fff; padding: 15px; margin-bottom: 15px; box-sizing: border-box; outline: none; }
-        button { width: 100%; padding: 15px; background: var(--accent); color: #000; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; text-transform: uppercase; }
+        .dashboard { max-width: 900px; margin: 0 auto; background: var(--card); border-radius: 20px; padding: 30px; border: 1px solid #222; box-shadow: 0 30px 60px rgba(0,0,0,0.5); }
+        h1 { color: var(--accent); margin: 0; font-size: 28px; letter-spacing: -1px; }
+        .status { font-family: 'JetBrains Mono'; font-size: 10px; color: #555; margin-bottom: 20px; text-transform: uppercase; }
+        textarea { width: 100%; height: 100px; background: #000; border: 1px solid #333; border-radius: 12px; color: #fff; padding: 15px; margin-bottom: 15px; box-sizing: border-box; outline: none; transition: 0.3s; }
+        textarea:focus { border-color: var(--accent); }
+        button { width: 100%; padding: 15px; background: var(--accent); color: #000; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; text-transform: uppercase; transition: 0.3s; }
+        button:hover { background: #fff; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 25px; display: none; }
         .full { grid-column: 1 / -1; }
-        .card { background: #181818; padding: 20px; border-radius: 12px; border: 1px solid #222; }
+        .card { background: #181818; padding: 20px; border-radius: 12px; border: 1px solid #222; animation: fadeIn 0.5s ease forwards; }
         .label { color: var(--accent); font-size: 10px; font-family: 'JetBrains Mono'; display: block; margin-bottom: 8px; }
-        .timeline-item { border-left: 2px solid var(--accent); padding-left: 15px; margin-bottom: 15px; }
-        .time { color: var(--accent); font-size: 11px; font-weight: 600; display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .tl-item { border-left: 2px solid var(--accent); padding-left: 15px; margin-bottom: 12px; }
+        .tl-time { color: var(--accent); font-size: 11px; font-weight: 600; display: block; }
     </style>
 </head>
 <body>
     <div class="dashboard">
         <h1>DecisionOS</h1>
-        <div class="status">KERNEL: <span id="st" style="color:#0f8">ONLINE</span></div>
-        <textarea id="inp" placeholder="Senaryoyu girin..."></textarea>
-        <button id="btn">ANALİZİ BAŞLAT</button>
+        <div class="status">KERNEL: <span id="st" style="color:#0f8">V5.4 STABLE</span></div>
+        <textarea id="inp" placeholder="Senaryoyu detaylıca buraya girin..."></textarea>
+        <button id="btn">STRATEJİK ANALİZİ BAŞLAT</button>
         <div id="res" class="grid"></div>
     </div>
     <script>
         document.getElementById('btn').onclick = async () => {
-            const t = document.getElementById('inp').value;
+            const t = document.getElementById('inp').value.trim();
+            if(!t) return;
             const res = document.getElementById('res');
             const st = document.getElementById('st');
-            
-            st.innerText = "İŞLENİYOR...";
+            st.innerText = "YAPAY ZEKA ANALİZ EDİYOR...";
             res.style.display = 'none';
 
             try {
@@ -47,26 +50,30 @@
                 const d = await r.json();
 
                 if (d.status === "success") {
-                    st.innerText = "TAMAMLANDI";
+                    st.innerText = "ANALİZ TAMAMLANDI";
+                    st.style.color = "#0f8";
                     res.style.display = 'grid';
                     let act = "";
-                    d.report.action_plan.forEach(a => {
-                        const p = a.split(':');
-                        act += `<div class="timeline-item"><span class="time">${p[0]}</span><span style="font-size:13px">${p[1]||a}</span></div>`;
-                    });
+                    if(d.report.action_plan) {
+                        d.report.action_plan.forEach(a => {
+                            const p = a.split(':');
+                            act += `<div class="tl-item"><span class="tl-time">${p[0]}</span><span style="font-size:13px; color:#ddd">${p[1]||a}</span></div>`;
+                        });
+                    }
 
                     res.innerHTML = `
-                        <div class="card full" style="border-left:4px solid var(--danger)"><span class="label">NİHAİ KARAR</span><b style="font-size:16px">${d.report.final_decision}</b></div>
-                        <div class="card"><span class="label">ANALİZ</span><p style="font-size:13px;color:#ccc;margin:0">${d.report.analysis}</p></div>
-                        <div class="card"><span class="label">AKSİYONLAR</span>${act}</div>
-                        <div class="card full" style="background:#200; border-color:#522"><span class="label" style="color:var(--danger)">VETO</span><p style="font-size:13px;margin:0">${d.report.veto}</p></div>
+                        <div class="card full" style="border-left:4px solid var(--danger)"><span class="label">🚨 NİHAİ KARAR VE TALİMAT</span><b style="font-size:17px">${d.report.final_decision}</b></div>
+                        <div class="card"><span class="label">📊 STRATEJİK ANALİZ</span><p style="font-size:13px;color:#ccc;margin:0;line-height:1.6">${d.report.analysis}</p></div>
+                        <div class="card"><span class="label">🛠️ AKSİYON PLANI</span>${act}</div>
+                        <div class="card full" style="background:rgba(255,71,87,0.05); border-color:#522"><span class="label" style="color:var(--danger)">⚠️ VETO KARARI</span><p style="font-size:13px;margin:0;color:#ffb8b8">${d.report.veto}</p></div>
                     `;
                 } else {
-                    st.innerText = "HATA";
+                    st.innerText = "BAĞLANTI HATASI";
+                    st.style.color = var(--danger);
                     res.style.display = 'block';
-                    res.innerHTML = `<div class="card full">Sunucudan gelen yanıt: ${d.report}</div>`;
+                    res.innerHTML = `<div class="card full">Sistemden Gelen Hata: <br><br><b>${d.report}</b><br><br>Lütfen Render üzerinden 'Clear Cache and Deploy' yaparak güncel kodu yüklediğinizden emin olun.</div>`;
                 }
-            } catch (e) { st.innerText = "BAĞLANTI KESİLDİ"; }
+            } catch (e) { st.innerText = "SERVER ÇEVRİMDIŞI"; }
         };
     </script>
 </body>
