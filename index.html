@@ -3,35 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DecisionOS v9.0 | Nuclear Option</title>
+    <title>DecisionOS v9.1 | Final Masterpiece</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
         body { background: #020617; color: #f1f5f9; font-family: 'Plus Jakarta Sans', sans-serif; min-height: 100vh; }
-        .glass { background: rgba(15, 23, 42, 0.96); backdrop-filter: blur(25px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 2.5rem; }
-        .chart-box { background: #000; padding: 2.5rem; border-radius: 3rem; margin: 2rem 0; border: 1px solid #6366f144; box-shadow: 0 0 50px rgba(0,0,0,0.8); }
-        .data-table { width: 100%; margin: 2.5rem 0; border-collapse: collapse; border-radius: 1.5rem; overflow: hidden; }
-        .data-table th { background: linear-gradient(to right, #3730a3, #4f46e5); padding: 16px; color: white; text-align: left; font-size: 0.75rem; text-transform: uppercase; font-weight: 900; }
-        .data-table td { background: rgba(255,255,255,0.02); padding: 16px; border: 1px solid rgba(255,255,255,0.05); font-size: 0.95rem; color: #cbd5e1; }
-        .btn-main { background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%); transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        .btn-main:hover { transform: translateY(-5px) scale(1.02); box-shadow: 0 25px 50px rgba(99, 102, 241, 0.4); }
+        .glass { background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 2.5rem; }
+        .chart-box { background: #000; padding: 2rem; border-radius: 2.5rem; margin: 2rem 0; border: 1px solid #6366f144; min-height: 350px; }
+        .data-table { width: 100%; margin: 2rem 0; border-collapse: collapse; border-radius: 1.5rem; overflow: hidden; }
+        .data-table th { background: linear-gradient(to right, #3730a3, #4f46e5); padding: 14px; text-align: left; font-size: 0.75rem; text-transform: uppercase; font-weight: 800; }
+        .data-table td { background: rgba(255,255,255,0.02); padding: 14px; border: 1px solid rgba(255,255,255,0.05); font-size: 0.9rem; }
+        .btn-main { background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%); transition: 0.3s; }
+        .btn-main:hover { transform: translateY(-3px); box-shadow: 0 15px 30px rgba(99, 102, 241, 0.4); }
     </style>
 </head>
-<body class="p-4 md:p-12 lg:p-20">
+<body class="p-6 md:p-12 lg:p-20">
     <div class="max-w-6xl mx-auto">
-        <header class="flex justify-between items-center mb-20 px-6">
-            <div>
-                <h1 class="text-7xl font-black tracking-tighter italic">Decision<span class="text-indigo-500">OS</span></h1>
-                <p class="text-[10px] uppercase tracking-[0.6em] text-slate-600 font-black mt-2">V9.0 NUKE EDITION</p>
-            </div>
-            <div class="glass px-8 py-3 text-emerald-400 text-xs font-black uppercase tracking-widest border-emerald-500/20 shadow-[0_0_20px_rgba(16,185,129,0.1)]">Kernel: Locked & Loaded</div>
+        <header class="flex justify-between items-center mb-16">
+            <h1 class="text-6xl font-black tracking-tighter italic">Decision<span class="text-indigo-500">OS</span></h1>
+            <div class="glass px-6 py-2 text-emerald-400 text-[10px] uppercase font-black tracking-widest">Final Stable Sync</div>
         </header>
 
-        <section class="glass p-10 md:p-14 mb-20 shadow-3xl border-white/5 relative">
-            <textarea id="incidentInput" class="w-full h-44 bg-transparent text-slate-100 text-3xl outline-none resize-none font-light placeholder:text-slate-800" placeholder="Hedefi girin..."></textarea>
-            <button onclick="analyzeIncident()" id="actionBtn" class="w-full py-8 rounded-[2.5rem] btn-main text-white font-black text-3xl mt-10 tracking-tighter uppercase italic">EXECUTE TACTICAL ANALYSIS</button>
+        <section class="glass p-10 shadow-2xl mb-16">
+            <textarea id="incidentInput" class="w-full h-40 bg-transparent text-slate-200 text-2xl outline-none resize-none" placeholder="Talimat verin..."></textarea>
+            <button onclick="analyzeIncident()" id="actionBtn" class="w-full py-6 rounded-3xl btn-main text-white font-black text-2xl mt-8">EXECUTE ANALYSIS</button>
         </section>
 
         <div id="resultArea" class="hidden"></div>
@@ -41,58 +38,35 @@
         const ultraRender = (text) => {
             if (!text) return "";
             
-            // 1. ATOMİK TEMİZLİK (Her şeyi metne çevir)
+            // 1. TEMİZLİK VE VERİ KURTARMA
             let raw = text.toString();
-            
-            // 2. DOSYA VE JSON PAKETLERİNİ KURTAR
             if (raw.includes('"analysis":')) {
-                try {
-                    const match = raw.match(/"analysis":\s*"([\s\S]*?)"(?=\s*[,\}])/);
-                    if (match) raw = match[1];
-                } catch(e) {}
+                const match = raw.match(/"analysis":\s*"([\s\S]*?)"(?=\s*[,\}])/);
+                if (match) raw = match[1];
             }
-
-            // 3. KARAKTER ONARIMI
-            let clean = raw
-                .replace(/\\n/g, "\n")
-                .replace(/\\"/g, '"')
-                .replace(/<br\s*\/?>/gi, "\n")
-                .replace(/\\t/g, " ");
-
-            // 4. GRAFİK AVLAYICI (NUKE VERSION)
-            const chartMatch = clean.match(/\{[\s\S]*?"type"\s*:\s*"(?:line|bar|pie)"[\s\S]*?\}/i);
             
+            let clean = raw.replace(/\\n/g, "\n").replace(/\\"/g, '"').replace(/<br\s*\/?>/gi, "\n");
+            let chartHtml = "";
+
+            // 2. GRAFİK AVLAYICI (VE KUTUYU OLUŞTURUCU)
+            const chartMatch = clean.match(/\{[\s\S]*?"type"\s*:\s*"(?:line|bar)"[\s\S]*?\}/);
             if (chartMatch) {
                 const id = "chart-" + Math.random().toString(36).substr(2, 5);
-                // JSON içindeki TÜM kirliliği siliyoruz
-                let jsonStr = chartMatch[0]
-                    .replace(/<br>/gi, "")
-                    .replace(/\n/g, "")
-                    .replace(/\\/g, "")
-                    .replace(/\s+/g, " ");
-
-                // Eğer JSON hiyerarşisi bozulmuşsa tırnakları düzelten ufak bir dokunuş
-                jsonStr = jsonStr.replace(/""/g, '"');
-
+                const configStr = chartMatch[0].replace(/<br>/gi, "").replace(/\n/g, "").replace(/\s+/g, " ");
+                
+                chartHtml = `<div class="chart-box"><canvas id="${id}"></canvas></div>`;
+                
                 setTimeout(() => {
                     try {
                         const ctx = document.getElementById(id).getContext('2d');
-                        const config = JSON.parse(jsonStr);
-                        // Fontları dashboard stiline uyduralım
-                        Chart.defaults.color = '#94a3b8';
-                        Chart.defaults.font.family = 'Plus Jakarta Sans';
-                        new Chart(ctx, config);
-                    } catch(e) { 
-                        console.error("JSON parse failed. Falling back to recovery.");
-                        // Kurtarma Modu: Eğer JSON bozuksa içindeki rakamları yakalamaya çalış
-                        document.getElementById(id).style.display = 'none';
-                    }
-                }, 1000);
+                        new Chart(ctx, JSON.parse(configStr));
+                    } catch(e) { console.error("Chart Error"); }
+                }, 800);
 
-                clean = `<div class="chart-box"><canvas id="${id}"></canvas></div>` + clean.replace(chartMatch[0], "");
+                clean = clean.replace(chartMatch[0], ""); // JSON'u metinden çıkar
             }
 
-            // 5. TABLO MOTORU
+            // 3. TABLO MOTORU
             clean = clean.replace(/(?:^|\n)((?:\|.+?\|(?:\n|$))+)/g, (match, table) => {
                 const rows = table.trim().split("\n").filter(r => r.includes("|") && !r.includes("---"));
                 const h = rows[0].split("|").filter(c => c.trim()).map(c => `<th>${c.trim()}</th>`).join("");
@@ -100,15 +74,11 @@
                 return `<div class="overflow-x-auto"><table class="data-table"><thead><tr>${h}</tr></thead><tbody>${b}</tbody></table></div>`;
             });
 
-            // 6. KALINTI SÜPÜRÜCÜ
-            return clean
-                .replace(/\"?boot_log\"?[\s\S]*?analysis\"?\s*:\s*\"?/, "")
-                .replace(/\"?,?\s*\"?files\"?[\s\S]*?$/, "")
-                .replace(/\{/g, "").replace(/\}/g, "")
-                .replace(/\[/g, "").replace(/\]/g, "")
-                .replace(/\"/g, "").replace(/<br><br><br>/g, "<​br>")
-                .replace(/\n/g, "<​br>")
-                .trim();
+            // 4. BAŞLIK VE SON TEMİZLİK
+            clean = clean.replace(/\$/g, "").replace(/\{/g, "").replace(/\}/g, "").replace(/\[/g, "").replace(/\]/g, "").replace(/\"/g, "");
+            
+            // GRAFİĞİ EN ÜSTE EKLE VE DÖNDÜR
+            return chartHtml + clean.replace(/\n/g, "<​br>");
         };
 
         async function analyzeIncident() {
@@ -118,9 +88,8 @@
             if(!input.trim()) return;
 
             btn.disabled = true;
-            btn.innerHTML = "INFILTRATING DATA SOURCES...";
             resArea.classList.remove('hidden');
-            resArea.innerHTML = `<div class="glass p-32 text-center animate-pulse text-indigo-500 font-black uppercase text-2xl tracking-[0.8em]">Prometheus Core Online</div>`;
+            resArea.innerHTML = `<div class="glass p-20 text-center animate-pulse text-indigo-500 font-black">ANALYSIS IN PROGRESS...</div>`;
 
             try {
                 const response = await fetch('https://decisionos-v4.onrender.com/analyze', {
@@ -131,25 +100,21 @@
                 const report = data.report || {};
 
                 resArea.innerHTML = `
-                    <div id="report-content" class="glass p-16 md:p-24 border-t-[12px] border-indigo-600 shadow-[0_50px_100px_rgba(0,0,0,0.6)]">
-                        <div class="flex justify-between items-center mb-20 px-4">
-                            <h2 class="text-6xl font-black italic uppercase text-white tracking-tighter shadow-indigo-500/20 shadow-xl">${report.final_decision || "TACTICAL REPORT"}</h2>
-                            <button onclick="downloadPDF()" class="px-10 py-4 bg-indigo-600 text-white rounded-full text-xs font-black uppercase tracking-widest no-print hover:scale-110 transition-all shadow-[0_10px_30px_rgba(79,70,229,0.4)]">Export PDF</button>
+                    <div id="report-content" class="glass p-12 border-t-8 border-indigo-600 shadow-2xl">
+                        <div class="flex justify-between items-center mb-10">
+                            <h2 class="text-4xl font-black italic uppercase">${report.final_decision || "STRATEGIC REPORT"}</h2>
+                            <button onclick="downloadPDF()" class="px-6 py-2 bg-indigo-600 rounded-full text-[10px] font-black no-print">EXPORT</button>
                         </div>
-                        <div class="grid grid-cols-1 lg:grid-cols-12 gap-20">
-                            <div class="lg:col-span-8 text-slate-300 leading-relaxed text-2xl font-light italic">
+                        <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
+                            <div class="lg:col-span-8 text-slate-300 text-xl leading-relaxed">
                                 ${ultraRender(report.analysis || "")}
                             </div>
                             <div class="lg:col-span-4">
-                                <div class="glass p-10 sticky top-16 border-white/5 shadow-2xl bg-indigo-950/10">
-                                    <div class="text-[10px] font-black text-indigo-500 mb-6 uppercase tracking-[0.3em]">Decision Confidence</div>
-                                    <div class="text-7xl font-black text-white mb-8 tracking-tighter">${((report.confidence || 0.95)*100).toFixed(0)}%</div>
-                                    <div class="w-full bg-slate-950 h-3 rounded-full overflow-hidden">
-                                        <div class="bg-indigo-500 h-full shadow-[0_0_25px_rgba(99,102,241,1)]" style="width:${(report.confidence || 0.95)*100}%"></div>
-                                    </div>
-                                    <div class="mt-16 pt-10 border-t border-white/5 text-[10px] text-slate-500 font-bold uppercase tracking-widest space-y-4">
-                                        <div class="flex justify-between"><span>Veto Status</span><span class="text-emerald-400">Clear</span></div>
-                                        <div class="flex justify-between"><span>Protocol</span><span>v9.0 Fixed</span></div>
+                                <div class="glass p-8 sticky top-12 shadow-xl border-white/5">
+                                    <div class="text-[10px] font-black text-indigo-500 mb-4 uppercase">Confidence</div>
+                                    <div class="text-6xl font-black text-white mb-6">${((report.confidence || 0.95)*100).toFixed(0)}%</div>
+                                    <div class="w-full bg-slate-950 h-2 rounded-full overflow-hidden">
+                                        <div class="bg-indigo-500 h-full" style="width:${(report.confidence || 0.95)*100}%"></div>
                                     </div>
                                 </div>
                             </div>
@@ -157,16 +122,15 @@
                     </div>
                 `;
             } catch (e) {
-                resArea.innerHTML = `<div class="p-20 glass text-red-500 text-center font-black">KERNEL_PANIC: ${e.message}</div>`;
+                resArea.innerHTML = `<div class="p-10 text-red-500">Error: ${e.message}</div>`;
             } finally {
                 btn.disabled = false;
-                btn.innerHTML = "EXECUTE TACTICAL ANALYSIS";
             }
         }
 
         function downloadPDF() {
             const element = document.getElementById('report-content');
-            html2pdf().set({ margin: 0.5, filename: 'DecisionOS_v9_Report.pdf', html2canvas: { scale: 2, backgroundColor: '#020617' } }).from(element).save();
+            html2pdf().set({ margin: 0.5, filename: 'Report.pdf', html2canvas: { scale: 2, backgroundColor: '#020617' } }).from(element).save();
         }
     </script>
 </body>
