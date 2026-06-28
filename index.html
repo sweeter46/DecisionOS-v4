@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>DecisionOS v15.4 | Final Purge</title>
+    <title>DecisionOS v15.5 | Ghost Protocol</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -10,44 +10,42 @@
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
         body { background: #010409; color: #f0f6fc; font-family: 'Plus Jakarta Sans', sans-serif; min-height: 100vh; overflow-x: hidden; }
         .glass { background: rgba(13, 17, 23, 0.95); backdrop-filter: blur(25px); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 3rem; }
-        .chart-box { background: #000; padding: 2.5rem; border-radius: 3.5rem; margin: 2rem 0; border: 2px solid #2ea043; min-height: 400px; box-shadow: 0 0 50px rgba(46, 160, 67, 0.1); }
-        .btn-main { background: linear-gradient(135deg, #2ea043 0%, #238636 100%); transition: 0.4s; font-weight: 800; }
+        .btn-main { background: linear-gradient(135deg, #2ea043 0%, #238636 100%); transition: 0.4s; font-weight: 800; border-radius: 3rem; }
         .btn-main:hover { transform: translateY(-4px); box-shadow: 0 15px 30px rgba(46, 160, 67, 0.4); }
         .clean-text { font-size: 1.6rem; line-height: 1.8; color: #cbd5e1; font-weight: 300; font-style: italic; }
+        .chart-box { background: #000; padding: 2.5rem; border-radius: 3.5rem; border: 2px solid #2ea043; min-height: 400px; }
     </style>
 </head>
 <body class="p-6 md:p-12 lg:p-24 italic">
     <div class="max-w-7xl mx-auto">
         <header class="flex justify-between items-center mb-16 italic">
             <h1 class="text-7xl font-black tracking-tighter italic">Decision<span class="text-green-500 font-extrabold text-8xl">OS</span></h1>
-            <div class="glass px-8 py-3 text-green-500 text-[10px] font-black uppercase tracking-[0.5em] border-green-500/20 shadow-xl">FINAL_PURGE_V15.4</div>
+            <div class="glass px-8 py-3 text-green-500 text-[10px] font-black uppercase tracking-[0.5em] border-green-500/20">GHOST_PROTOCOL_V15.5</div>
         </header>
 
-        <section class="glass p-12 mb-16 shadow-3xl border-white/5 bg-slate-950/20">
+        <section class="glass p-12 mb-16 bg-slate-950/20">
             <textarea id="incidentInput" class="w-full h-40 bg-transparent text-slate-100 text-3xl outline-none resize-none placeholder:text-slate-900 font-light" placeholder="Analiz emri bekleniyor..."></textarea>
-            <button onclick="analyzeIncident()" id="actionBtn" class="w-full py-9 rounded-[3rem] btn-main text-white text-4xl mt-10 shadow-2xl uppercase tracking-tighter italic">Execute Strategic Mission</button>
+            <button onclick="analyzeIncident()" id="actionBtn" class="w-full py-9 btn-main text-white text-4xl mt-10 shadow-3xl uppercase tracking-tighter italic">Execute Strategic Mission</button>
         </section>
 
         <div id="resultArea" class="hidden"></div>
     </div>
 
     <script>
-        const finalPurgeRender = (rawInput) => {
+        const ghostRender = (rawInput) => {
             if (!rawInput) return "";
             
-            // 1. GRAFİK İÇİN VERİ ÇEKİMİ
-            let dataRaw = rawInput.toString().replace(/\\n/g, " ").replace(/\\/g, "");
+            // 1. HAM VERİYİ YIKAMA
+            let wash = rawInput.toString().replace(/\\n/g, "\n").replace(/\\/g, "");
+
+            // 2. GRAFİK VERİSİNİ ÇEK (Ham veriden)
             const months = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
             const labels = [];
             const values = [];
-
             months.forEach(m => {
                 const regex = new RegExp(m + ".*?([0-9]+\\.[0-9]+|[0-9]+)", "i");
-                const match = dataRaw.match(regex);
-                if (match) {
-                    labels.push(m);
-                    values.push(parseFloat(match[1]));
-                }
+                const match = wash.match(regex);
+                if (match) { labels.push(m); values.push(parseFloat(match[1])); }
             });
 
             let chartHtml = "";
@@ -61,47 +59,38 @@
                         data: {
                             labels: labels,
                             datasets: [{
-                                label: 'Veri Akışı',
-                                data: values,
-                                borderColor: '#2ea043',
-                                backgroundColor: 'rgba(46, 160, 67, 0.05)',
-                                tension: 0.45,
-                                fill: true,
-                                borderWidth: 6,
-                                pointRadius: 8,
-                                pointBackgroundColor: '#fff'
+                                data: values, borderColor: '#2ea043', backgroundColor: 'rgba(46, 160, 67, 0.05)',
+                                tension: 0.45, fill: true, borderWidth: 6, pointRadius: 8, pointBackgroundColor: '#fff'
                             }]
                         },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            plugins: { legend: { display: false } },
-                            scales: {
-                                y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#8b949e' } },
-                                x: { grid: { display: false }, ticks: { color: '#8b949e' } }
-                            }
-                        }
+                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
                     });
                 }, 800);
             }
 
-            // 2. NİHAİ TEMİZLİK: report_content VE partial KELİMELERİNİ YOK ET
-            let clean = rawInput.toString()
-                .replace(/\\n/g, "\n")
-                .replace(/\\/g, "")
-                .replace(/\{[\s\S]*?\}/g, "") 
-                .replace(/\[[\s\S]*?\]/g, "")
-                .replace(/report_content\s*:/gi, "") // En baştaki o yazıyı SİL
-                .replace(/analysis:|status:|report:|boot_log:|confidence:|evidence_and_checklist:|veto:|disclaimer:|options:/gi, "")
+            // 3. GHOST PROTOCOL: Sadece raporun başladığı yerden itibaren kes!
+            // Canlıda "###" ile rapor başlıyor. Öncesindeki her şeyi (evidence, veto vs.) çöpe atıyoruz.
+            let startIdx = wash.indexOf("###");
+            if (startIdx === -1) startIdx = 0; // Bulamazsan baştan al
+            
+            let reportBody = wash.substring(startIdx);
+
+            // Sondaki JSON kırıntılarını temizle (status:partial, options vs.)
+            let endIdx = reportBody.search(/status:|options:|chart:|confidence:|evidence_and_checklist:/i);
+            if (endIdx !== -1) {
+                reportBody = reportBody.substring(0, endIdx);
+            }
+
+            // Temizlik: Tırnak, parantez ve dolar karakterlerini yok et
+            let finalClean = reportBody
+                .replace(/report_content|status/gi, "")
                 .replace(/[\{\}\[\]\$\"\"]/g, "")
-                .replace(/,\s*partial\s*$/i, "") // En sondaki partial yazısını SİL
-                .replace(/^\s*[n\s,]+/gi, "") // Baştaki n ve virgüleri SİL
-                .replace(/chart.*?options/gi, "")
+                .replace(/\\/g, "")
                 .trim();
 
-            const finalLines = clean.split('\n')
-                .map(line => line.trim().replace(/^n\s+/, ""))
-                .filter(line => line.length > 5) 
+            const finalLines = finalClean.split('\n')
+                .map(line => line.trim())
+                .filter(line => line.length > 5)
                 .join('<br>');
 
             return chartHtml + `<div class="mt-16 clean-text">${finalLines}</div>`;
@@ -115,7 +104,7 @@
 
             btn.disabled = true;
             resArea.classList.remove('hidden');
-            resArea.innerHTML = `<div class="glass p-40 text-center animate-pulse text-green-500 font-extrabold uppercase text-3xl tracking-[1em]">Establishing Neural Sync...</div>`;
+            resArea.innerHTML = `<div class="glass p-40 text-center animate-pulse text-green-500 font-extrabold uppercase text-3xl tracking-[1em]">Purifying Live Stream...</div>`;
 
             try {
                 const response = await fetch('https://decisionos-v4.onrender.com/analyze', {
@@ -125,23 +114,21 @@
                 const data = await response.json();
                 
                 resArea.innerHTML = `
-                    <div id="report-content" class="glass p-16 lg:p-24 border-t-[20px] border-green-600 shadow-3xl bg-black/50">
+                    <div id="report-content" class="glass p-16 lg:p-24 border-t-[20px] border-green-600 bg-black/50">
                         <div class="flex justify-between items-center mb-20 px-4 italic">
                             <h2 class="text-7xl font-black text-white italic tracking-tighter uppercase">Tactical Summary</h2>
                             <button onclick="downloadPDF()" class="px-10 py-4 bg-green-700 text-white rounded-full text-xs font-black uppercase tracking-widest no-print hover:scale-110 shadow-2xl">EXPORT PDF</button>
                         </div>
-                        <div class="grid grid-cols-1 lg:grid-cols-12 gap-24">
-                            <div class="lg:col-span-8">${finalPurgeRender(JSON.stringify(data))}</div>
+                        <div class="grid grid-cols-1 lg:grid-cols-12 gap-24 italic">
+                            <div class="lg:col-span-8 italic">${ghostRender(JSON.stringify(data))}</div>
                             <div class="lg:col-span-4">
                                 <div class="glass p-10 bg-green-950/10 border-green-500/10 text-center shadow-3xl italic">
                                     <div class="text-[10px] font-black text-green-500 mb-8 uppercase tracking-[0.4em]">Confidence</div>
                                     <div class="text-9xl font-black text-white mb-10 tracking-tighter">95%</div>
-                                    <div class="w-full bg-slate-900 h-2 rounded-full overflow-hidden">
-                                        <div class="bg-green-500 h-full w-[95%]"></div>
-                                    </div>
+                                    <div class="w-full bg-slate-900 h-2 rounded-full overflow-hidden"><div class="bg-green-500 h-full w-[95%]"></div></div>
                                     <div class="mt-16 pt-8 border-t border-white/5 text-[8px] text-slate-500 font-bold uppercase tracking-[0.2em] space-y-4 text-left">
                                         <div class="flex justify-between"><span>VETO STATUS</span><span class="text-emerald-400 font-black">CLEAR</span></div>
-                                        <div class="flex justify-between"><span>INTERFACE</span><span>V15.4 FINAL</span></div>
+                                        <div class="flex justify-between"><span>CORE</span><span>V15.5 GHOST</span></div>
                                     </div>
                                 </div>
                             </div>
@@ -149,7 +136,7 @@
                     </div>
                 `;
             } catch (e) {
-                resArea.innerHTML = `<div class="p-32 glass text-red-500 text-center font-black italic text-3xl">PROTOCOL_SYNC_ERROR: ${e.message}</div>`;
+                resArea.innerHTML = `<div class="p-32 glass text-red-500 text-center font-black italic text-3xl italic">SYNC_FAILURE: ${e.message}</div>`;
             } finally {
                 btn.disabled = false;
             }
@@ -157,7 +144,7 @@
 
         function downloadPDF() {
             const element = document.getElementById('report-content');
-            html2pdf().set({ margin: 0.5, filename: 'DecisionOS_Final_Report.pdf', html2canvas: { scale: 2, backgroundColor: '#010409' } }).from(element).save();
+            html2pdf().set({ margin: 0.5, filename: 'DecisionOS_Report.pdf', html2canvas: { scale: 2, backgroundColor: '#010409' } }).from(element).save();
         }
     </script>
 </body>
