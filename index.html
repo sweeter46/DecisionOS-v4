@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DecisionOS v5.0 | Prometheus Elite</title>
+    <title>DecisionOS v5.1 | Prometheus Elite</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=JetBrains+Mono&display=swap" rel="stylesheet">
     <style>
         :root { --bg: #050505; --card: #111111; --accent: #00ff88; --text: #f0f0f0; --danger: #ff4757; }
@@ -27,7 +27,7 @@
 <body>
     <div class="dashboard">
         <h1>DecisionOS</h1>
-        <div class="status-bar">SYSTEM STATUS: <span id="statusText" style="color:#00ff88">V5.1 ONLINE</span></div>
+        <div class="status-bar">SYSTEM STATUS: <span id="statusText" style="color:#00ff88">V5.1 READY</span></div>
         <textarea id="userInput" placeholder="Kriz senaryosunu buraya girin..."></textarea>
         <button id="startBtn">STRATEJİK SENTEZİ BAŞLAT</button>
         <div id="resultArea" class="report-grid"></div>
@@ -40,8 +40,9 @@
 
         startBtn.addEventListener('click', async () => {
             const text = userInput.value.trim();
-            if (text.length < 5) return alert("Lütfen senaryo giriniz.");
-            statusText.innerText = "SENTEZLENİYOR...";
+            if (text.length < 5) return alert("Lütfen bir senaryo giriniz.");
+            
+            statusText.innerText = "YAPAY ZEKA ANALİZ EDİYOR...";
             statusText.style.color = "#ffaa00";
             resultArea.style.display = 'none';
 
@@ -66,15 +67,15 @@
                     });
 
                     resultArea.innerHTML = `
-                        <div class="card full-width" style="border-left:5px solid #ff4757"><span class="risk-badge">RİSK: KRİTİK</span><span class="label">🛑 NİHAİ KARAR</span><p style="font-size:17px; font-weight:600; margin:10px 0;">${r.final_decision}</p></div>
+                        <div class="card full-width" style="border-left:5px solid #ff4757"><span class="risk-badge">RİSK: KRİTİK (L10)</span><span class="label">🛑 NİHAİ KARAR VE TALİMAT</span><p style="font-size:18px; font-weight:600; margin:10px 0;">${r.final_decision}</p></div>
                         <div class="card"><span class="label">📊 STRATEJİK ANALİZ</span><p style="font-size:13px; color:#ccc; line-height:1.6;">${r.analysis}</p></div>
-                        <div class="card"><span class="label">🛠️ AKSİYON PLANI</span><div style="margin-top:15px;">${actionHtml}</div></div>
-                        <div class="card full-width" style="border-left:5px solid #ff4757; background:rgba(255,71,87,0.05);"><span class="label" style="color:#ff4757;">⚠️ MUTLAK VETO</span><p style="margin:0; font-size:13px; color:#ffb8b8;">${r.veto}</p></div>
+                        <div class="card"><span class="label">🛠️ ZAMAN ÇİZELGELİ AKSİYON PLANI</span><div style="margin-top:10px;">${actionHtml}</div></div>
+                        <div class="card full-width" style="background:rgba(255,71,87,0.05); border-left:5px solid #ff4757;"><span class="label" style="color:#ff4757;">⚠️ MUTLAK VETO</span><p style="margin:0; font-size:14px; color:#ffb8b8; font-weight:600;">${r.veto}</p></div>
                     `;
                 } else {
-                    statusText.innerText = "API YANITI BEKLENİYOR";
+                    statusText.innerText = "SİSTEM MEŞGUL";
                     resultArea.style.display = 'block';
-                    resultArea.innerHTML = `<div class="card full-width" style="color:#ffaa00; border-color:#ffaa00;">Sistem geçici bir gecikme yaşıyor. Lütfen 5 saniye sonra tekrar deneyin veya girdinizi kontrol edin. <br><br> Sunucu Yanıtı: ${data.report}</div>`;
+                    resultArea.innerHTML = `<div class="card full-width" style="border-color:#ffaa00; background:rgba(255,170,0,0.05);"><span class="label" style="color:#ffaa00;">BİLGİ</span>AI yanıtı oluşturulurken bir gecikme oldu. Lütfen 10 saniye bekleyip tekrar "Başlat"a basın.<br><br><small style="color:#888;">Hata Kodu: ${data.report}</small></div>`;
                 }
             } catch (e) {
                 statusText.innerText = "BAĞLANTI HATASI";

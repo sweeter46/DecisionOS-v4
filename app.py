@@ -21,28 +21,37 @@ class Incident(BaseModel):
 
 @app.post("/analyze")
 async def analyze(incident: Incident):
-    # GÜNCEL ABACUS API BİLGİLERİ
     url = "https://api.abacus.ai/api/v0/getChatResponse"
+    # KESİN LİSTE FORMATI: [{"is_user": True, "text": "..."}]
     payload = {
         "deploymentToken": "f3baa2a32be542f9af98a81aa71da611",
         "deploymentId": "63a2ddb70",
-        "messages": [{"is_user": True, "text": incident.text}]
+        "messages": [
+            {
+                "is_user": True, 
+                "text": incident.text
+            }
+        ]
     }
 
     try:
-        response = requests.post(url, json=payload, timeout=50)
+        # Zaman aşımını 60 saniyeye çıkardık
+        response = requests.post(url, json=payload, timeout=60)
         ai_data = response.json()
         
         if ai_data.get("success"):
             messages = ai_data["result"].get("messages", [])
-            # En son asistan cevabını yakala
+            # En son gelen asistan mesajını al
             raw_text = ""
             for m in reversed(messages):
                 if not m.get("is_user"):
                     raw_text = m.get("text", "")
                     break
             
-            # JSON Ayıklama ve Temizlik
+            if not raw_text:
+                return {"report": "AI yanıt üretemedi.", "status": "error"}
+
+            # JSON Ayıklama
             clean_text = raw_text.replace("```json", "").replace("```", "").strip()
             match = re.search(r'(\{.*\})', clean_text, re.DOTALL)
             
@@ -55,10 +64,9 @@ async def analyze(incident: Incident):
             
             return {"report": raw_text, "status": "text"}
         
-        # API hatası durumunda detaylı log verelim
-        return {"report": f"API Hatası: {ai_data.get('error', 'Bilinmeyen Hata')}", "status": "error"}
+        return {"report": f"API Hatası: {ai_data.get('error', 'Bilinmeyen Format')}", "status": "error"}
     except Exception as e:
-        return {"report": f"Sunucu Hatası: {str(e)}", "status": "error"}
+        return {"report": f"Bağlantı Hatası: {str(e)}", "status": "error"}
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
