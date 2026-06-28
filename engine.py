@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-import requests
+import urllib.request
 import json
 import os
 import uvicorn
@@ -23,7 +23,7 @@ class Incident(BaseModel):
 async def analyze(incident: Incident):
     url = "https://api.abacus.ai/api/v0/getChatResponse"
     
-    # Abacus'un istediği tam liste yapısı
+    # PARAMETRELERİ EN SAF VE KATI LİSTE HALİNDE HAZIRLIYORUZ
     payload = {
         "deploymentToken": "f3baa2a32be542f9af98a81aa71da611",
         "deploymentId": "63a2ddb70",
@@ -35,18 +35,18 @@ async def analyze(incident: Incident):
         ]
     }
 
-    # Veriyi en katı haliyle JSON string'e çeviriyoruz
-    raw_json_data = json.dumps(payload)
-    
-    headers = {
-        "Content-Type": "application/json",
-        "Accept": "application/json"
-    }
-
     try:
-        # data= kullanarak ham veriyi gönderiyoruz
-        response = requests.post(url, data=raw_json_data, headers=headers, timeout=60)
-        ai_data = response.json()
+        # VERİYİ MANUEL OLARAK BYTE DİZİSİNE ÇEVİRİYORUZ (HATA PAYI %0)
+        data = json.dumps(payload).encode('utf-8')
+        
+        req = urllib.request.Request(url, data=data, method='POST')
+        req.add_header('Content-Type', 'application/json')
+        req.add_header('Accept', 'application/json')
+        
+        # API ÇAĞRISI
+        with urllib.request.urlopen(req, timeout=60) as response:
+            res_body = response.read().decode('utf-8')
+            ai_data = json.loads(res_body)
         
         if ai_data.get("success"):
             messages = ai_data["result"].get("messages", [])
@@ -65,10 +65,9 @@ async def analyze(incident: Incident):
                 except: pass
             
             return {"report": raw_text, "status": "text"}
-        
-        # Hata mesajını string olarak döndür
-        return {"report": str(ai_data.get('error', 'Bilinmeyen Abacus Hatası')), "status": "error"}
-    
+            
+        return {"report": f"Abacus Hatası: {ai_data.get('error')}", "status": "error"}
+
     except Exception as e:
         return {"report": f"Sistem hatası: {str(e)}", "status": "error"}
 
