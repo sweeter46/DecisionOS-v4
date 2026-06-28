@@ -24,7 +24,6 @@ async def analyze(incident: Incident):
     url = "https://api.abacus.ai/api/v0/getChatResponse"
     
     # PARAMETRELERİ EN SAF HALİYLE OLUŞTUR
-    # messages kısmının kesinlikle bir LİSTE [] olduğunu Abacus'a hissettiriyoruz.
     payload = {
         "deploymentToken": "f3baa2a32be542f9af98a81aa71da611",
         "deploymentId": "63a2ddb70",
@@ -38,32 +37,26 @@ async def analyze(incident: Incident):
 
     try:
         # json.dumps kullanarak Python listesini standart JSON Array'e çeviriyoruz
-        # ensure_ascii=False Türkçe karakterlerin bozulmasını engeller
-        json_payload = json.dumps(payload, ensure_ascii=False)
+        json_payload = json.dumps(payload)
         
         headers = {
             "Content-Type": "application/json",
             "Accept": "application/json"
         }
 
-        # requests.post içinde data= kancasını kullanarak HAM JSON gönderiyoruz
-        response = requests.post(url, data=json_payload.encode('utf-8'), headers=headers, timeout=60)
+        # data= parametresiyle ham string'i gönderiyoruz
+        response = requests.post(url, data=json_payload, headers=headers, timeout=60)
         ai_data = response.json()
         
         if ai_data.get("success"):
-            # Yanıtı çözümle
-            res_obj = ai_data.get("result", {})
-            messages = res_obj.get("messages", [])
-            output_text = ""
+            messages = ai_data.get("result", {}).get("messages", [])
+            raw_text = ""
+            for m in reversed(messages):
+                if not m.get("is_user"):
+                    raw_text = m.get("text", "")
+                    break
             
-            if messages:
-                for m in reversed(messages):
-                    if not m.get("is_user"):
-                        output_text = m.get("text", "")
-                        break
-            
-            # Dashboard JSON ayıkla
-            clean = output_text.replace("```json", "").replace("```", "").strip()
+            clean = raw_text.replace("```json", "").replace("```", "").strip()
             match = re.search(r'(\{.*\})', clean, re.DOTALL)
             
             if match:
@@ -72,13 +65,12 @@ async def analyze(incident: Incident):
                 except:
                     pass
             
-            return {"report": output_text, "status": "text"}
+            return {"report": raw_text, "status": "text"}
         
-        # Abacus'tan gelen hatayı ekrana bas
         return {"report": f"Abacus Reddi: {ai_data.get('error')}", "status": "error"}
 
     except Exception as e:
-        return {"report": f"Sistem hatası: {str(e)}", "status": "error"}
+        return {"report": f"Sunucu hatası: {str(e)}", "status": "error"}
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
