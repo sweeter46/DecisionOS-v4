@@ -13,36 +13,47 @@ class Incident(BaseModel):
 async def analyze(incident: Incident):
     url = "https://api.abacus.ai/api/v0/getChatResponse"
     
-    # AI'yı JSON formatına ZORLAMIYORUZ. Rahat bırakıyoruz ki tabloyu düzgün yazsın.
-    system_instruction = """
-    Sen DecisionOS Prometheus çekirdeğisin. 
-    Analizini şu başlıklarla düz metin olarak yap:
-    [DECISION] (Kısa karar)
-    [ANALYSIS] (Grafik kodu, Tablo ve LaTeX buraya gelsin)
-    [PLAN] (0-1h, 1-24h görevleri)
-    """
-
     payload = {
         "deploymentToken": "f3baa2a32be542f9af98a81aa71da611",
         "deploymentId": "63a2ddb70",
-        "messages": json.dumps([{"is_user": False, "text": system_instruction}, {"is_user": True, "text": incident.text}])
+        "messages": json.dumps([{"is_user": True, "text": incident.text}])
     }
 
     try:
         response = requests.post(url, json=payload, timeout=90)
         ai_data = response.json()
-        raw_text = next((m.get("text", "") for m in reversed(ai_data["result"]["messages"]) if not m.get("is_user")), "")
+        
+        # Abacus'tan gelen mesajı al
+        raw_response = next((m for m in reversed(ai_data["result"]["messages"]) if not m.get("is_user")), {})
+        text_content = raw_response.get("text", "")
 
-        # AI'dan gelen düz metni biz JSON paketine dönüştürüyoruz
-        return {
-            "report": {
-                "final_decision": "ANALİZ TAMAMLANDI",
-                "analysis": raw_text,
-                "action_plan": {"0-1h": ["Metin bazlı analiz üretildi."], "1-24h": [], "24-72h": []},
-                "confidence": 0.95
-            },
-            "status": "success"
-        }
+        # --- KRİTİK GÜNCELLEME: FILES İÇERİĞİNİ YAKALA ---
+        try:
+            # Eğer text_content bir JSON string ise onu objeye çevir
+            inner_json = json.loads(text_content)
+            
+            # Ana analiz metnini al
+            final_text = inner_json.get("analysis", "")
+            
+            # EĞER FILES VARSA, ONLARI DA ANALİZE EKLE (GRAFİK BURADA OLABİLİR!)
+            if "files" in inner_json and len(inner_json["files"]) > 0:
+                for file in inner_json["files"]:
+                    final_text += f"\n\n### EK DOSYA İÇERİĞİ ({file.get('path')}):\n{file.get('content')}"
+            
+            # Dashboard'a birleştirilmiş metni yolla
+            return {
+                "report": {
+                    "final_decision": inner_json.get("final_decision", "ANALİZ"),
+                    "analysis": final_text,
+                    "action_plan": inner_json.get("action_plan", {"0-1h": []}),
+                    "confidence": inner_json.get("confidence", 0.95)
+                },
+                "status": "success"
+            }
+        except:
+            # Eğer JSON parse edilemezse ham metni yolla
+            return {"report": {"analysis": text_content}, "status": "partial"}
+
     except Exception as e:
         return {"report": str(e), "status": "error"}
 
