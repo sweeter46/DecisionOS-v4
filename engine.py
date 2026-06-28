@@ -21,41 +21,35 @@ class Incident(BaseModel):
 
 @app.post("/analyze")
 async def analyze(incident: Incident):
-    # Senin getirdiğin analizdeki OpenAI uyumlu endpoint ve formatı deniyoruz
     url = "https://api.abacus.ai/api/v0/getChatResponse"
     
-    # KESİN LİSTE YAPISI VE STANDART ROLE/CONTENT FORMATI
+    # ABACUS'UN "KESİN" İSTEDİĞİ FORMAT (is_user ve text)
+    messages_payload = [
+        {
+            "is_user": True,
+            "text": str(incident.text)
+        }
+    ]
+    
     payload = {
         "deploymentToken": "f3baa2a32be542f9af98a81aa71da611",
         "deploymentId": "63a2ddb70",
-        "messages": [
-            {
-                "role": "user",
-                "content": str(incident.text)
-            }
-        ]
-    }
-
-    headers = {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer f3baa2a32be542f9af98a81aa71da611" # Token'ı hem içerde hem başlıkta gönderiyoruz
+        "messages": messages_payload
     }
 
     try:
-        # json=payload yerine manuel data=json.dumps kullanımı (Bypass yöntemi)
-        response = requests.post(url, data=json.dumps(payload), headers=headers, timeout=60)
+        # json parametresi requests kütüphanesinde listeyi otomatik JSON array'e çevirir.
+        response = requests.post(url, json=payload, timeout=60)
         ai_data = response.json()
         
         if ai_data.get("success"):
-            messages = ai_data["result"].get("messages", [])
+            messages_from_api = ai_data["result"].get("messages", [])
             raw_text = ""
-            for m in reversed(messages):
-                # Hem 'content' hem 'text' hem 'is_user' kontrolüyle yanıtı bul
-                if not m.get("is_user") or m.get("role") == "assistant":
-                    raw_text = m.get("content") or m.get("text") or ""
+            for m in reversed(messages_from_api):
+                if not m.get("is_user"):
+                    raw_text = m.get("text", "")
                     break
             
-            # JSON Ayıklama
             clean = raw_text.replace("```json", "").replace("```", "").strip()
             match = re.search(r'(\{.*\})', clean, re.DOTALL)
             
@@ -67,11 +61,10 @@ async def analyze(incident: Incident):
             
             return {"report": raw_text, "status": "text"}
         
-        # Abacus'un hata detayını yakalayalım
-        error_msg = ai_data.get('error', 'Bilinmeyen Hata')
-        return {"report": f"Abacus Hatası: {error_msg}", "status": "error"}
+        # API'den gelen ham hata mesajını döndür ki görebilelim
+        return {"report": f"Abacus Hatası: {ai_data.get('error')}", "status": "error"}
     except Exception as e:
-        return {"report": f"Sistem hatası: {str(e)}", "status": "error"}
+        return {"report": f"Sunucu Hatası: {str(e)}", "status": "error"}
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
