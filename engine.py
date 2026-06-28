@@ -36,41 +36,46 @@ async def analyze(incident: Incident):
         if ai_data.get("success"):
             result = ai_data.get("result", {})
             messages = result.get("messages", [])
-            raw_text = ""
-            for m in reversed(messages):
-                if not m.get("is_user"):
-                    raw_text = m.get("text", "")
-                    break
+            raw_text = next((m.get("text", "") for m in reversed(messages) if not m.get("is_user")), "")
             
-            # --- KRİTİK TEMİZLİK KATMANI ---
-            # Eğer raw_text tırnakla çevrili bir string ise, onu gerçek objeye çevir
+            # --- GELİŞMİŞ TEMİZLİK (STRICT=FALSE) ---
             content = raw_text.strip()
-            
-            # Markdown temizliği (Eğer varsa)
             content = content.replace("```json", "").replace("```", "").strip()
-            
-            try:
-                # 1. Deneme: Doğrudan Parse
-                final_obj = json.loads(content)
-                # Eğer hâlâ bir string döndürüyorsa bir kez daha parse et (Double Encoding Fix)
-                if isinstance(final_obj, str):
-                    final_obj = json.loads(final_obj)
-            except:
-                # 2. Deneme: Regex ile içinden çek
-                match = re.search(r'(\{.*\})', content, re.DOTALL)
-                if match:
-                    final_obj = json.loads(match.group(1))
-                    if isinstance(final_obj, str):
-                        final_obj = json.loads(final_obj)
-                else:
-                    final_obj = {"error": "JSON_NOT_FOUND", "raw": content}
 
-            return {"report": final_obj, "status": "success"}
+            # Eğer tırnakla paketlenmişse (Stringified JSON), tırnakları ve kaçışları temizle
+            if content.startswith('"') and content.endsWith('"'):
+                try: 
+                    # Bu satır, string içindeki \" ve \n gibi kaçış karakterlerini çözer
+                    content = json.loads(content)
+                except: 
+                    content = content[1:-1]
+
+            def smart_parse(text):
+                try:
+                    # strict=False gizli kontrol karakterlerini (tab, newline vb.) görmezden gelir
+                    return json.loads(text, strict=False)
+                except:
+                    # Regex ile süslü parantez içine odaklan
+                    match = re.search(r'(\{.*\})', text, re.DOTALL)
+                    if match:
+                        return json.loads(match.group(1), strict=False)
+                    raise ValueError("JSON Yapısı Bulunamadı")
+
+            try:
+                final_obj = smart_parse(content)
+                # Double encoding kontrolü
+                if isinstance(final_obj, str):
+                    final_obj = smart_parse(final_obj)
+                
+                return {"report": final_obj, "status": "success"}
+            except Exception as e:
+                logger.error(f"Parse Hatası: {str(e)} | İçerik: {content[:100]}")
+                return {"report": raw_text, "status": "text"} # Hata olsa bile ham metni yolla, HTML parse eder
             
         return {"report": ai_data.get("error"), "status": "error"}
 
     except Exception as e:
-        return {"report": f"Sunucu Hatası: {str(e)}", "status": "error"}
+        return {"report": f"Sistem Hatası: {str(e)}", "status": "error"}
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
