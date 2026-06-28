@@ -18,60 +18,56 @@ class Incident(BaseModel):
 async def analyze(incident: Incident):
     url = "https://api.abacus.ai/api/v0/getChatResponse"
     
-    # ABACUS'UN AZ ÖNCE HATA MESAJINDA İSTEDİĞİ KESİN FORMAT 
-    # (is_user anahtarı küçük harf 'true' olacak şekilde JSON'a zorlanıyor)
-    # text içindeki tırnak işaretlerini temizleyerek listenin yapısını koruyoruz.
-    safe_text = str(incident.text).replace('"', "'").replace("\n", " ").strip()
-    
-    # Paketi manuel olarak (String Injection ile) en saf haliyle inşa ediyoruz.
-    # Bu yöntem, listenin internetten geçerken bozulma şansını sıfıra indirir.
-    payload_str = (
-        '{'
-        f'"deploymentToken": "f3baa2a32be542f9af98a81aa71da611",'
-        f'"deploymentId": "63a2ddb70",'
-        f'"messages": [{{ "is_user": true, "text": "{safe_text}" }}]'
-        '}'
-    )
+    # KESİN VE DEĞİŞMEZ ŞABLON (Abacus'un "is_user" ve "text" kuralına tam uyum)
+    # Tırnak işaretlerini kaçış karakterleriyle mühürleyerek listenin yapısını koruyoruz.
+    payload = {
+        "deploymentToken": "f3baa2a32be542f9af98a81aa71da611",
+        "deploymentId": "63a2ddb70",
+        "messages": [
+            {
+                "is_user": True,
+                "text": str(incident.text).strip()
+            }
+        ]
+    }
 
     headers = {
-        "Content-Type": "application/json",
-        "User-Agent": "Mozilla/5.0"
+        "Content-Type": "application/json"
     }
 
     try:
-        logger.info(f"MÜHÜRLÜ PAKET GÖNDERİLİYOR: {payload_str}")
+        # json.dumps() içindeki separators parametresi, Abacus'un sevmediği 
+        # tüm o 'gereksiz boşlukları' siler ve paketi 'saf bir liste' haline getirir.
+        mühürlü_paket = json.dumps(payload, separators=(',', ':'))
         
-        # data= kullanarak ham stringi doğrudan Abacus'un kapısına bırakıyoruz
-        response = requests.post(url, data=payload_str.encode('utf-8'), headers=headers, timeout=60)
+        logger.info(f"FİNAL GÖNDERİ: {mühürlü_paket}")
+        
+        # data= kullanarak ham veriyi hiç bozmadan doğrudan iletiyoruz.
+        response = requests.post(url, data=mühürlü_paket.encode('utf-8'), headers=headers, timeout=60)
+        
         ai_data = response.json()
         
         if ai_data.get("success"):
-            result = ai_data.get("result", {})
-            messages_out = result.get("messages", [])
+            messages = ai_data["result"].get("messages", [])
             raw_text = ""
-            
-            # AI'dan gelen en son mesajı çekiyoruz
-            for m in reversed(messages_out):
+            for m in reversed(messages):
                 if not m.get("is_user"):
                     raw_text = m.get("text", "")
                     break
             
-            # Dashboard JSON ayıklama
             clean = raw_text.replace("```json", "").replace("```", "").strip()
             match = re.search(r'(\{.*\})', clean, re.DOTALL)
             
             if match:
-                try: 
-                    return {"report": json.loads(match.group(1)), "status": "success"}
-                except: 
-                    pass
+                try: return {"report": json.loads(match.group(1)), "status": "success"}
+                except: pass
             
             return {"report": raw_text, "status": "text"}
             
         return {"report": f"Abacus Reddi: {ai_data.get('error')}", "status": "error"}
 
     except Exception as e:
-        return {"report": f"Sistem Hatası: {str(e)}", "status": "error"}
+        return {"report": f"Bağlantı Hatası: {str(e)}", "status": "error"}
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
