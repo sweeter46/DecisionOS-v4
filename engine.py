@@ -21,28 +21,34 @@ async def analyze(incident: Incident):
     try:
         response = requests.post(url, json=payload, timeout=90)
         ai_data = response.json()
-        raw_msg = next((m for m in reversed(ai_data["result"]["messages"]) if not m.get("is_user")), {}).get("text", "")
+        
+        # Ters çevirip en son AI cevabını alıyoruz
+        messages = ai_data.get("result", {}).get("messages", [])
+        raw_msg = next((m for m in reversed(messages) if not m.get("is_user")), {}).get("text", "")
 
         try:
-            # JSON paketini aç
+            # JSON paketini açıyoruz
             inner = json.loads(raw_msg)
-            full_content = inner.get("analysis", "")
+            full_analysis = inner.get("analysis", "")
             
-            # KRİTİK: Eğer dosyalar (files) varsa içeriğini ana metne ekle
-            if "files" in inner and len(inner["files"]) > 0:
-                for file in inner["files"]:
-                    full_content += f"\n\n{file.get('content', '')}"
+            # --- EKLEME: EĞER DOSYALAR VARSA METNE EKLE ---
+            # AI bazen grafik ve tabloyu "files" içine koyar
+            if "files" in inner and isinstance(inner["files"], list):
+                for f in inner["files"]:
+                    content = f.get("content", "")
+                    if content:
+                        full_analysis += f"\n\n{content}"
             
             return {
                 "report": {
                     "final_decision": inner.get("final_decision", "ANALİZ"),
-                    "analysis": full_content,
+                    "analysis": full_analysis,
                     "confidence": inner.get("confidence", 0.95)
                 },
                 "status": "success"
             }
         except:
-            # Ham metin gelirse direkt yolla
+            # JSON değilse ham metni yolla
             return {"report": {"analysis": raw_msg}, "status": "partial"}
 
     except Exception as e:
