@@ -9,12 +9,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("decisionos")
 
 app = FastAPI()
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"]
-)
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
 class Incident(BaseModel):
     text: str
@@ -22,60 +17,50 @@ class Incident(BaseModel):
 @app.post("/analyze")
 async def analyze(incident: Incident):
     url = "https://api.abacus.ai/api/v0/getChatResponse"
-
+    
+    # EN YALIN VE SAF PAYLOAD
     payload = {
         "deploymentToken": "f3baa2a32be542f9af98a81aa71da611",
         "deploymentId": "63a2ddb70",
         "messages": [
             {
                 "is_user": True,
-                "text": incident.text.strip()
+                "text": str(incident.text).strip()
             }
         ]
     }
 
-    # ✅ DÜZELTME: data= yerine json= kullan
-    # requests kütüphanesi json= parametresiyle otomatik olarak:
-    # 1) Content-Type: application/json header'ı ekler
-    # 2) Veriyi doğru JSON formatında gönderir
-    # 3) messages listesini bozMaz
     try:
-        logger.info(f"GÖNDERİLEN PAYLOAD: {json.dumps(payload, ensure_ascii=False)}")
-
-        response = requests.post(
-            url,
-            json=payload,          # ← SADECE BU DEĞİŞTİ
-            timeout=60
-        )
-
-        logger.info(f"HTTP DURUM KODU: {response.status_code}")
-        logger.info(f"HAM YANIT: {response.text[:500]}")
-
+        # LOGLAMA: Gönderilen listeyi kontrol et
+        logger.info(f"Yollanan liste yapısı: {payload}")
+        
+        # ALTIN KURAL: Sadece json=payload kullanıyoruz. 
+        # Requests hem header'ı ayarlar hem de listeyi bozmadan iletir.
+        response = requests.post(url, json=payload, timeout=60)
+        
         ai_data = response.json()
-
+        
         if ai_data.get("success"):
-            messages = ai_data["result"].get("messages", [])
+            result = ai_data.get("result", {})
+            messages = result.get("messages", [])
             raw_text = ""
             for m in reversed(messages):
                 if not m.get("is_user"):
                     raw_text = m.get("text", "")
                     break
-
+            
             clean = raw_text.replace("```json", "").replace("```", "").strip()
             match = re.search(r'(\{.*\})', clean, re.DOTALL)
-
+            
             if match:
-                try:
-                    return {"report": json.loads(match.group(1)), "status": "success"}
-                except json.JSONDecodeError:
-                    pass
-
+                try: return {"report": json.loads(match.group(1)), "status": "success"}
+                except: pass
+            
             return {"report": raw_text, "status": "text"}
-
+            
         return {"report": f"Abacus Reddi: {ai_data.get('error')}", "status": "error"}
 
     except Exception as e:
-        logger.error(f"HATA: {str(e)}")
         return {"report": f"Bağlantı Hatası: {str(e)}", "status": "error"}
 
 if __name__ == "__main__":
