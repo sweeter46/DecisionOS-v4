@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DecisionOS v5.4 | Final</title>
+    <title>DecisionOS v5.4 | Stable</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono&display=swap" rel="stylesheet">
     <style>
         :root { --bg: #050505; --card: #111; --accent: #0f8; --danger: #f47; }
@@ -33,7 +33,7 @@
         <div id="res" class="grid"></div>
     </div>
     <script>
-        document.getElementById('btn').onclick = async () => {
+        document.getElementById('btn').onclick = async function() {
             const t = document.getElementById('inp').value.trim();
             if(!t) return;
             const res = document.getElementById('res');
@@ -55,25 +55,26 @@
                     res.style.display = 'grid';
                     let act = "";
                     if(d.report.action_plan) {
-                        d.report.action_plan.forEach(a => {
+                        d.report.action_plan.forEach(function(a) {
                             const p = a.split(':');
-                            act += `<div class="tl-item"><span class="tl-time">${p[0]}</span><span style="font-size:13px; color:#ddd">${p[1]||a}</span></div>`;
+                            act += '<div class="tl-item"><span class="tl-time">' + (p[0] || 'ADIM') + '</span><span style="font-size:13px; color:#ddd">' + (p[1] || a) + '</span></div>';
                         });
                     }
 
-                    res.innerHTML = `
-                        <div class="card full" style="border-left:4px solid var(--danger)"><span class="label">🚨 NİHAİ KARAR VE TALİMAT</span><b style="font-size:17px">${d.report.final_decision}</b></div>
-                        <div class="card"><span class="label">📊 STRATEJİK ANALİZ</span><p style="font-size:13px;color:#ccc;margin:0;line-height:1.6">${d.report.analysis}</p></div>
-                        <div class="card"><span class="label">🛠️ AKSİYON PLANI</span>${act}</div>
-                        <div class="card full" style="background:rgba(255,71,87,0.05); border-color:#522"><span class="label" style="color:var(--danger)">⚠️ VETO KARARI</span><p style="font-size:13px;margin:0;color:#ffb8b8">${d.report.veto}</p></div>
-                    `;
+                    res.innerHTML = '<div class="card full" style="border-left:4px solid #ff4757"><span class="label">🚨 NİHAİ KARAR VE TALİMAT</span><b style="font-size:17px">' + d.report.final_decision + '</b></div>' +
+                        '<div class="card"><span class="label">📊 STRATEJİK ANALİZ</span><p style="font-size:13px;color:#ccc;margin:0;line-height:1.6">' + d.report.analysis + '</p></div>' +
+                        '<div class="card"><span class="label">🛠️ AKSİYON PLANI</span>' + act + '</div>' +
+                        '<div class="card full" style="background:rgba(255,71,87,0.05); border-color:#522"><span class="label" style="color:#ff4757">⚠️ VETO KARARI</span><p style="font-size:13px;margin:0;color:#ffb8b8">' + d.report.veto + '</p></div>';
                 } else {
                     st.innerText = "BAĞLANTI HATASI";
-                    st.style.color = var(--danger);
+                    st.style.color = "#ff4757";
                     res.style.display = 'block';
-                    res.innerHTML = `<div class="card full">Sistemden Gelen Hata: <br><br><b>${d.report}</b><br><br>Lütfen Render üzerinden 'Clear Cache and Deploy' yaparak güncel kodu yüklediğinizden emin olun.</div>`;
+                    res.innerHTML = '<div class="card full">Sistemden Gelen Hata: <br><br><b>' + d.report + '</b><br><br>Lütfen Render üzerinden "Clear Cache and Deploy" yaparak güncel kodu yüklediğinizden emin olun.</div>';
                 }
-            } catch (e) { st.innerText = "SERVER ÇEVRİMDIŞI"; }
+            } catch (e) { 
+                st.innerText = "SERVER ÇEVRİMDIŞI"; 
+                st.style.color = "#ff4757";
+            }
         };
     </script>
 </body>
