@@ -5,6 +5,7 @@ import requests
 import json
 import os
 import uvicorn
+import re
 
 app = FastAPI()
 
@@ -20,9 +21,9 @@ class Incident(BaseModel):
 
 @app.post("/analyze")
 async def analyze(incident: Incident):
+    # API URL'sini ve Kimlik Bilgilerini Hazırla
     url = "https://api.abacus.ai/api/v0/getChatResponse"
     
-    # PARAMETRELERİ HAZIRLA
     payload = {
         "deploymentToken": "f3baa2a32be542f9af98a81aa71da611",
         "deploymentId": "63a2ddb70",
@@ -34,28 +35,34 @@ async def analyze(incident: Incident):
         ]
     }
 
-    # --- KRİTİK RÖNTGEN BÖLGESİ ---
-    json_data = json.dumps(payload)
-    print("------------------------------------------")
-    print(f"ABACUS'A GİDEN HAM VERİ: {json_data}")
-    print(f"MESSAGES TİPİ: {type(payload['messages'])}")
-    print("------------------------------------------")
-    
-    headers = {"Content-Type": "application/json"}
-
     try:
-        # DATA= kullanarak ham string gönderiyoruz
-        response = requests.post(url, data=json_data, headers=headers, timeout=60)
+        # Abacus'a isteği gönder
+        response = requests.post(url, json=payload, timeout=60)
         ai_data = response.json()
         
-        # Eğer hala hata geliyorsa tam gövdeyi logda görelim
-        if not ai_data.get("success"):
-            print(f"ABACUS'TAN GELEN HATA GÖVDESİ: {ai_data}")
+        if ai_data.get("success"):
+            messages = ai_data["result"].get("messages", [])
+            raw_text = ""
+            for m in reversed(messages):
+                if not m.get("is_user"):
+                    raw_text = m.get("text", "")
+                    break
             
-        return {"report": ai_data, "status": "raw_check"}
+            # Dashboard JSON ayıkla
+            clean = raw_text.replace("```json", "").replace("```", "").strip()
+            match = re.search(r'(\{.*\})', clean, re.DOTALL)
+            
+            if match:
+                try:
+                    return {"report": json.loads(match.group(1)), "status": "success"}
+                except: pass
+            
+            return {"report": raw_text, "status": "text"}
+        
+        return {"report": f"Abacus Hatası: {ai_data.get('error')}", "status": "error"}
     
     except Exception as e:
-        return {"report": str(e), "status": "error"}
+        return {"report": f"Sunucu Hatası: {str(e)}", "status": "error"}
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
