@@ -5,7 +5,7 @@ import requests
 import os
 import uvicorn
 import json
-import re # Düzenli ifadeler kütüphanesi
+import re
 
 app = FastAPI()
 
@@ -29,31 +29,29 @@ async def analyze(incident: Incident):
     }
 
     try:
-        response = requests.post(url, json=payload, timeout=40)
+        response = requests.post(url, json=payload, timeout=45)
         ai_data = response.json()
         
         if ai_data.get("success"):
             messages = ai_data["result"].get("messages", [])
-            raw_text = ""
-            for m in messages:
-                if not m.get("is_user"):
-                    raw_text = m.get("text", "")
-                    break
+            raw_text = next((m.get("text", "") for m in reversed(messages) if not m.get("is_user")), "")
             
-            # --- TÜM PARANTEZLERİ VE ÇÖPLERİ KAZIYAN PROFESYONEL TEMİZLİK ---
-            # Gereksiz ```json gibi ibareleri sil
+            # Kod bloklarını ve gereksiz metinleri temizle
             raw_text = raw_text.replace("```json", "").replace("```", "").strip()
             
-            # Yazı içindeki ilk { ve son } arasını al
+            # İlk { ve son } arasını bul
             match = re.search(r'(\{.*\})', raw_text, re.DOTALL)
             if match:
-                clean_json_str = match.group(1)
-                # Metni gerçek bir Python objesine çevir
-                clean_data = json.loads(clean_json_str)
-                return {"report": clean_data, "is_json": True}
+                try:
+                    clean_json_str = match.group(1)
+                    report_obj = json.loads(clean_json_str)
+                    # HTML tarafına "is_json" bayrağını ve temiz objeyi gönder
+                    return {"report": report_obj, "is_json": True}
+                except:
+                    pass
             
             return {"report": raw_text, "is_json": False}
-        return {"report": "Abacus Hatası", "is_json": False}
+        return {"report": "AI API Hatası", "is_json": False}
     except Exception as e:
         return {"report": str(e), "is_json": False}
 
