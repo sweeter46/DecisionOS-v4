@@ -3,103 +3,106 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DecisionOS v4.0 | Prometheus Kernel</title>
+    <title>DecisionOS v5.0 | AI Decision Intelligence</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Plus+Jakarta+Sans:wght@700&display=swap');
         
+        :root {
+            --bg-color: #0b0f19;
+            --card-bg: rgba(23, 32, 53, 0.6);
+            --accent-color: #6366f1; /* Indigo AI Color */
+            --text-main: #f1f5f9;
+        }
+
         body {
-            background-color: #050505;
-            color: #00ff41;
-            font-family: 'Fira Code', monospace;
-            background-image: radial-gradient(#0a2a0a 0.5px, transparent 0.5px);
-            background-size: 20px 20px;
+            background: radial-gradient(circle at top right, #1e1b4b, #0b0f19);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            min-height: 100 screen;
         }
 
-        .cyber-input {
-            background: rgba(0, 20, 0, 0.8);
-            border: 1px solid #007722;
-            color: #00ff41;
-            box-shadow: inset 0 0 10px #001100;
+        h1 { font-family: 'Plus Jakarta Sans', sans-serif; }
+
+        /* Glassmorphism Effect */
+        .glass-panel {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 1.5rem;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
         }
 
-        .cyber-button {
-            background: #007722;
-            color: #ffffff;
-            font-weight: bold;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            transition: all 0.3s;
-            border: 1px solid #00ff41;
-            cursor: pointer;
+        .ai-input {
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            transition: all 0.3s ease;
         }
 
-        .cyber-button:hover:not(:disabled) {
-            background: #00ff41;
-            color: #000;
-            box-shadow: 0 0 20px #00ff41;
-            transform: scale(1.01);
+        .ai-input:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 15px rgba(99, 102, 241, 0.15);
+            outline: none;
         }
 
-        .cyber-button:disabled {
-            opacity: 0.5;
-            cursor: wait;
+        .ai-button {
+            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
-        .terminal-box {
-            border: 1px solid #007722;
-            background: rgba(0, 5, 0, 0.95);
-            box-shadow: 0 0 20px rgba(0, 255, 64, 0.05);
+        .ai-button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(79, 70, 229, 0.4);
         }
 
-        .scanline {
-            width: 100%;
-            height: 2px;
-            background: rgba(0, 255, 65, 0.05);
-            position: absolute;
-            animation: scan 4s linear infinite;
-            pointer-events: none;
+        .decision-badge {
+            background: linear-gradient(90deg, #ef4444, #f43f5e);
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
         }
 
-        @keyframes scan {
-            0% { top: 0; }
-            100% { top: 100%; }
-        }
-
-        .fade-in-ready {
-            animation: fadeIn 0.8s ease-out forwards;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+        /* Modern Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
     </style>
 </head>
-<body class="min-h-screen p-4 md:p-8">
-    <div class="scanline"></div>
+<body class="p-6 md:p-12">
     
-    <div class="max-w-4xl mx-auto">
+    <div class="max-w-5xl mx-auto">
         <!-- HEADER -->
-        <header class="mb-8 border-b border-green-900 pb-4">
-            <h1 class="text-3xl font-bold tracking-tighter text-left">DECISION<span class="text-white">OS</span> <span class="text-xs border border-green-500 px-1 ml-2">v4.0 PROMETHEUS</span></h1>
-            <div class="flex justify-between items-center mt-1">
-                <p class="text-[10px] opacity-60 uppercase tracking-widest text-left">SİSTEM DURUMU: <span class="text-green-400">ÇEVRİMİÇİ</span> | BAĞLANTI: <span id="conn-status" class="text-blue-400">BEKLEMEDE</span></p>
-                <p class="text-[10px] opacity-40">INCIDENT_ID: NOVA-2026-X</p>
+        <header class="mb-12 flex flex-col md:flex-row justify-between items-end md:items-center gap-4">
+            <div>
+                <h1 class="text-4xl font-bold tracking-tight">Decision<span class="text-indigo-400">OS</span></h1>
+                <p class="text-slate-400 text-sm mt-1 font-light tracking-wide italic">Next-Gen Decision Intelligence System</p>
+            </div>
+            <div class="flex items-center gap-3 bg-slate-800 bg-opacity-40 px-4 py-2 rounded-full border border-slate-700">
+                <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <span id="conn-status" class="text-[11px] font-medium tracking-widest text-slate-300">SYSTEM: ONLINE</span>
             </div>
         </header>
 
-        <!-- INPUT SECTION -->
-        <div class="mb-8 p-4 border border-green-900 bg-black bg-opacity-40 text-left">
-            <label class="text-[10px] uppercase text-green-500 mb-2 block font-bold">Olay Tanımı / Kriz Senaryosu:</label>
-            <textarea id="incidentInput" class="w-full h-32 cyber-input p-4 rounded-none focus:outline-none focus:ring-1 focus:ring-green-400 text-sm leading-relaxed" placeholder="Örn: Dubai merkezli ortağımız varlık kaçırmaya çalışıyor, veriler sızdı ve denetçiler kapıda..."></textarea>
-            <button onclick="analyzeIncident()" id="actionBtn" class="w-full mt-4 py-4 cyber-button">ANALİZ PROTOKOLLERİNİ ÇALIŞTIR</button>
-        </div>
+        <!-- MAIN LAYOUT -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            <!-- INPUT (LEFT SIDE) -->
+            <div class="lg:col-span-12">
+                <div class="glass-panel p-8">
+                    <h2 class="text-sm font-semibold text-indigo-300 mb-4 flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                        NEW INCIDENT ANALYSIS
+                    </h2>
+                    <textarea id="incidentInput" class="w-full h-32 ai-input p-5 rounded-2xl text-slate-200 text-base leading-relaxed mb-6" placeholder="Describe the crisis or decision scenario in detail..."></textarea>
+                    <button onclick="analyzeIncident()" id="actionBtn" class="w-full py-4 rounded-xl ai-button text-white font-semibold text-lg flex justify-center items-center gap-3">
+                        GENERATE ANALYSIS
+                    </button>
+                </div>
+            </div>
 
-        <!-- RESULT SECTION -->
-        <div id="resultArea" class="hidden terminal-box p-6 relative">
-            <div id="brief">
-                <!-- Dashboard İçeriği -->
+            <!-- RESULT (SHOWN ON SUCCESS) -->
+            <div id="resultArea" class="hidden lg:col-span-12 animate-in fade-in slide-in-from-bottom-8 duration-700">
+                <div id="brief" class="space-y-8">
+                    <!-- Dashboard AI Generated Content -->
+                </div>
             </div>
         </div>
     </div>
@@ -113,17 +116,23 @@
             const actionBtn = document.getElementById('actionBtn');
             const connStatus = document.getElementById('conn-status');
             
-            if (!incidentText.trim()) return alert("Lütfen bir senaryo girin.");
+            if (!incidentText.trim()) return;
 
             actionBtn.disabled = true;
-            actionBtn.innerHTML = "VERİ PAKETLERİ ANALİZ EDİLİYOR...";
-            connStatus.innerText = "VERİ GÖNDERİLİYOR";
+            actionBtn.innerHTML = `
+                <svg class="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                AI KERNEL ANALYZING...`;
+
             resultArea.classList.remove('hidden');
             brief.innerHTML = `
-                <div class="space-y-2 text-xs opacity-80 uppercase text-left">
-                    <p class="animate-pulse">>> Giriş metni doğrulanıyor...</p>
-                    <p class="animate-pulse" style="animation-delay: 0.2s">>> Abacus Prometheus Kernel ile köprü kuruluyor...</p>
-                    <p class="animate-pulse" style="animation-delay: 0.4s">>> Multi-expert konseyi (LAW, FINANCE, RISK) toplanıyor...</p>
+                <div class="glass-panel p-12 text-center">
+                    <div class="flex justify-center mb-6">
+                        <div class="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+                    </div>
+                    <p class="text-indigo-200 text-lg font-light italic">Synthesizing multiple experts and strategic frameworks...</p>
                 </div>
             `;
 
@@ -134,8 +143,6 @@
                     body: JSON.stringify({ text: incidentText })
                 });
 
-                if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
-                
                 const data = await response.json();
                 let report = null;
 
@@ -143,89 +150,86 @@
                     let rawReport = data.report;
                     if (typeof rawReport === 'string') {
                         let cleaned = rawReport.trim();
-                        if (cleaned.startsWith('"') && cleaned.endsWith('"')) {
-                            cleaned = cleaned.substring(1, cleaned.length - 1);
-                        }
+                        if (cleaned.startsWith('"') && cleaned.endsWith('"')) cleaned = cleaned.substring(1, cleaned.length - 1);
                         cleaned = cleaned.replace(/\\r/g, "").replace(/\\n/g, "\n").replace(/\\"/g, '"').replace(/\\\\/g, "\\");
                         const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
                         report = jsonMatch ? JSON.parse(jsonMatch[0]) : JSON.parse(cleaned);
-                    } else {
-                        report = rawReport;
-                    }
-
-                    if (!report || !report.final_decision) throw new Error("Format uyuşmazlığı");
+                    } else report = rawReport;
                 } catch (e) {
-                    console.error("Parse Error:", e);
-                    brief.innerHTML = `<div class="p-4 border border-red-900 text-xs text-left text-red-400">AYIKLAMA HATASI: Yanıt işlenemedi.</div>`;
+                    brief.innerHTML = `<div class="glass-panel p-8 text-red-400">Analysis parsing failed. Raw data received.</div>`;
                     return;
                 }
 
-                // DASHBOARD RENDER (HATA KORUMALI)
-                connStatus.innerText = "İŞLEME TAMAMLANDI";
-                connStatus.classList.replace('text-blue-400', 'text-green-400');
+                const safeJoin = (arr) => Array.isArray(arr) ? arr.join(" • ") : (arr || "Pending");
 
-                // Güvenli Join Fonksiyonu
-                const safeJoin = (arr) => {
-                    if (Array.isArray(arr)) return arr.join(" | ");
-                    if (typeof arr === 'string') return arr;
-                    return "Veri yok";
-                };
-
+                // FINAL MINIMAL DASHBOARD
                 brief.innerHTML = `
-                    <div class="space-y-6 fade-in-ready text-left">
-                        <div class="flex items-start gap-2 border-l-2 border-blue-500 pl-4 py-1 bg-blue-900 bg-opacity-10 text-[10px]">
-                            <span class="text-blue-400 font-bold uppercase">BOOT_LOG ></span>
-                            <span class="opacity-80 font-medium italic">${report.boot_log || 'System Ready'}</span>
-                        </div>
-
-                        <div class="border border-red-500 p-4 bg-red-900 bg-opacity-10 text-center relative overflow-hidden">
-                            <div class="text-[0.6rem] text-red-500 font-bold mb-1 tracking-widest uppercase">NİHAİ KARAR PROTOKOLÜ</div>
-                            <div class="text-2xl font-black uppercase tracking-tighter text-white">${report.final_decision || 'ANALİZ TAMAMLANDI'}</div>
-                        </div>
-
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div class="p-3 border border-green-900 bg-black bg-opacity-40">
-                                <div class="text-[10px] text-green-500 font-bold border-b border-green-900 mb-2 pb-1 uppercase">Uzman Konseyi Analizi</div>
-                                <div class="text-[11px] leading-relaxed opacity-80">${report.analysis || 'Analiz yapılamadı.'}</div>
-                            </div>
-                            <div class="p-3 border ${report.veto ? 'border-red-600 bg-red-950 bg-opacity-10' : 'border-yellow-900 bg-yellow-950 bg-opacity-10'}">
-                                <div class="text-[10px] ${report.veto ? 'text-red-500' : 'text-yellow-600'} font-bold border-b border-green-900 mb-2 pb-1 uppercase">Veto & Uyarılar</div>
-                                <div class="text-[11px] leading-relaxed ${report.veto ? 'text-red-400 font-bold' : 'opacity-80'}">${report.veto || 'Hukuki engel tespit edilmedi.'}</div>
-                            </div>
-                        </div>
-
-                        <div class="p-4 border border-green-800 bg-green-900 bg-opacity-5">
-                            <div class="text-[10px] text-green-500 font-bold border-b border-green-800 mb-4 pb-1 uppercase tracking-widest">Taktiksel Aksiyon Planı</div>
-                            <div class="space-y-4">
-                                <div class="flex gap-3">
-                                    <span class="text-[9px] bg-green-800 text-black px-2 py-0.5 font-bold h-fit min-w-[70px] text-center">0-1 SAAT</span>
-                                    <span class="text-[11px] opacity-90">${safeJoin(report.action_plan?.["0-1h"])}</span>
-                                </div>
-                                <div class="flex gap-3">
-                                    <span class="text-[9px] bg-green-700 text-black px-2 py-0.5 font-bold h-fit min-w-[70px] text-center">1-24 SAAT</span>
-                                    <span class="text-[11px] opacity-90">${safeJoin(report.action_plan?.["1-24h"])}</span>
-                                </div>
-                                <div class="flex gap-3">
-                                    <span class="text-[9px] bg-green-900 text-green-200 px-2 py-0.5 border border-green-700 font-bold h-fit min-w-[70px] text-center">24-72 SAAT</span>
-                                    <span class="text-[11px] opacity-90">${safeJoin(report.action_plan?.["24-72h"])}</span>
-                                </div>
-                            </div>
-                        </div>
+                    <div class="space-y-8 fade-in-ready">
                         
-                        <div class="flex justify-between items-center text-[9px] opacity-30 border-t border-green-950 pt-3">
-                            <span>CONFIDENCE: %${((report.confidence || 0) * 100).toFixed(0)}</span>
-                            <span class="italic max-w-[70%] text-right">${report.disclaimer || ''}</span>
+                        <!-- HERO DECISION CARD -->
+                        <div class="glass-panel p-10 relative overflow-hidden border-t-4 border-indigo-500">
+                            <div class="flex flex-col items-center text-center">
+                                <span class="bg-indigo-500 bg-opacity-10 text-indigo-400 px-4 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase mb-4">Final Strategic Verdict</span>
+                                <h2 class="text-5xl font-extrabold tracking-tighter text-white mb-6 uppercase">${report.final_decision}</h2>
+                                <p class="text-slate-400 text-sm max-w-2xl leading-relaxed">${report.analysis}</p>
+                            </div>
+                        </div>
+
+                        <!-- SUB-DETAILS -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <!-- ACTION PLAN -->
+                            <div class="glass-panel p-8">
+                                <h3 class="text-indigo-400 text-xs font-bold uppercase tracking-widest mb-6 border-b border-white border-opacity-10 pb-3">Operational Roadmap</h3>
+                                <div class="space-y-6">
+                                    <div class="flex gap-4">
+                                        <div class="h-10 w-1 pt-1 bg-indigo-500 rounded-full"></div>
+                                        <div>
+                                            <p class="text-[10px] text-slate-500 font-bold">IMMEDIATE (0-1h)</p>
+                                            <p class="text-sm text-slate-200 mt-1">${safeJoin(report.action_plan?.["0-1h"])}</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex gap-4">
+                                        <div class="h-10 w-1 pt-1 bg-slate-600 rounded-full"></div>
+                                        <div>
+                                            <p class="text-[10px] text-slate-500 font-bold">SHORT-TERM (1-24h)</p>
+                                            <p class="text-sm text-slate-200 mt-1">${safeJoin(report.action_plan?.["1-24h"])}</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex gap-4">
+                                        <div class="h-10 w-1 pt-1 bg-slate-800 rounded-full"></div>
+                                        <div>
+                                            <p class="text-[10px] text-slate-500 font-bold">STRATEGIC (24-72h)</p>
+                                            <p class="text-sm text-slate-200 mt-1">${safeJoin(report.action_plan?.["24-72h"])}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- RISK & VETO -->
+                            <div class="glass-panel p-8 bg-opacity-40">
+                                <h3 class="text-rose-400 text-xs font-bold uppercase tracking-widest mb-6 border-b border-white border-opacity-10 pb-3">Risk Assessment & Veto</h3>
+                                <div class="mb-6">
+                                    <p class="text-[10px] text-slate-500 font-bold border-l-2 border-rose-500 pl-2 mb-2">CRITICAL VETO</p>
+                                    <p class="text-sm text-rose-200 font-medium">${report.veto || 'No blocking veto detected.'}</p>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] text-slate-500 font-bold border-l-2 border-indigo-500 pl-2 mb-2">SYSTEM BOOT LOG</p>
+                                    <p class="text-[11px] text-slate-400 italic font-light">${report.boot_log}</p>
+                                </div>
+                                <div class="mt-8 pt-6 border-t border-white border-opacity-5 flex justify-between items-center text-[10px] text-slate-500">
+                                    <span>CONFIDENCE: ${(report.confidence * 100).toFixed(0)}%</span>
+                                    <span class="italic max-w-[60%] text-right">${report.disclaimer || ''}</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 `;
 
             } catch (error) {
-                connStatus.innerText = "SİSTEM HATASI";
-                connStatus.classList.replace('text-blue-400', 'text-red-500');
-                brief.innerHTML = `<div class="p-4 text-red-500 border border-red-900 text-left">SYSTEM FAILURE: ${error.message}</div>`;
+                brief.innerHTML = `<div class="glass-panel p-8 text-rose-500">System Error: ${error.message}</div>`;
             } finally {
                 actionBtn.disabled = false;
-                actionBtn.innerHTML = "ANALİZ PROTOKOLLERİNİ ÇALIŞTIR";
+                actionBtn.innerHTML = "GENERATE ANALYSIS";
             }
         }
     </script>
