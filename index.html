@@ -100,7 +100,7 @@
 
             try {
                 // Backend'e İstek Gönder (Render API URL)
-                const response = await fetch('https://decisionos-api.onrender.com/analyze', {
+                const response = await fetch('https://decisionos-v4.onrender.com/analyze',{
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ text: incidentText })
