@@ -9,15 +9,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("decisionos")
 
 app = FastAPI()
-
-# CORS AYARLARI (Failed to fetch hatasını bitiren bölüm)
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
 
 class Incident(BaseModel):
     text: str
@@ -30,7 +22,6 @@ async def root():
 async def analyze(incident: Incident):
     url = "https://api.abacus.ai/api/v0/getChatResponse"
     
-    # FORMAT D (Double-Encoded)
     messages_list = [{"is_user": True, "text": str(incident.text).strip()}]
     payload = {
         "deploymentToken": "f3baa2a32be542f9af98a81aa71da611",
@@ -51,20 +42,34 @@ async def analyze(incident: Incident):
                     raw_text = m.get("text", "")
                     break
             
-            # JSON Ayıklama
-            clean = raw_text.replace("```json", "").replace("```", "").strip()
-            match = re.search(r'(\{.*\})', clean, re.DOTALL)
+            # --- KRİTİK TEMİZLİK KATMANI ---
+            # Eğer raw_text tırnakla çevrili bir string ise, onu gerçek objeye çevir
+            content = raw_text.strip()
             
-            if match:
-                try: return {"report": json.loads(match.group(1)), "status": "success"}
-                except: pass
+            # Markdown temizliği (Eğer varsa)
+            content = content.replace("```json", "").replace("```", "").strip()
             
-            return {"report": raw_text, "status": "text"}
+            try:
+                # 1. Deneme: Doğrudan Parse
+                final_obj = json.loads(content)
+                # Eğer hâlâ bir string döndürüyorsa bir kez daha parse et (Double Encoding Fix)
+                if isinstance(final_obj, str):
+                    final_obj = json.loads(final_obj)
+            except:
+                # 2. Deneme: Regex ile içinden çek
+                match = re.search(r'(\{.*\})', content, re.DOTALL)
+                if match:
+                    final_obj = json.loads(match.group(1))
+                    if isinstance(final_obj, str):
+                        final_obj = json.loads(final_obj)
+                else:
+                    final_obj = {"error": "JSON_NOT_FOUND", "raw": content}
+
+            return {"report": final_obj, "status": "success"}
             
-        return {"report": f"Abacus Reddi: {ai_data.get('error')}", "status": "error"}
+        return {"report": ai_data.get("error"), "status": "error"}
 
     except Exception as e:
-        logger.error(f"Sistem Hatası: {str(e)}")
         return {"report": f"Sunucu Hatası: {str(e)}", "status": "error"}
 
 if __name__ == "__main__":
