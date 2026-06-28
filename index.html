@@ -18,44 +18,62 @@
 
         .cyber-input {
             background: rgba(0, 20, 0, 0.8);
-            border: 1px solid #00ff41;
+            border: 1px solid #007722;
             color: #00ff41;
-            box-shadow: inset 0 0 10px #003300;
+            box-shadow: inset 0 0 10px #001100;
         }
 
         .cyber-button {
-            background: #00ff41;
-            color: #050505;
+            background: #007722;
+            color: #ffffff;
             font-weight: bold;
             text-transform: uppercase;
             letter-spacing: 2px;
             transition: all 0.3s;
-            border: none;
+            border: 1px solid #00ff41;
             cursor: pointer;
         }
 
-        .cyber-button:hover {
+        .cyber-button:hover:not(:disabled) {
+            background: #00ff41;
+            color: #000;
             box-shadow: 0 0 20px #00ff41;
-            transform: scale(1.02);
+            transform: scale(1.01);
+        }
+
+        .cyber-button:disabled {
+            opacity: 0.5;
+            cursor: wait;
         }
 
         .terminal-box {
             border: 1px solid #007722;
-            background: rgba(0, 5, 0, 0.9);
-            box-shadow: 0 0 15px rgba(0, 255, 65, 0.1);
+            background: rgba(0, 5, 0, 0.95);
+            box-shadow: 0 0 20px rgba(0, 255, 64, 0.05);
         }
 
         .scanline {
             width: 100%;
             height: 2px;
-            background: rgba(0, 255, 65, 0.1);
+            background: rgba(0, 255, 65, 0.05);
             position: absolute;
             animation: scan 4s linear infinite;
+            pointer-events: none;
         }
 
         @keyframes scan {
             0% { top: 0; }
             100% { top: 100%; }
+        }
+
+        /* Dashboard animasyonları */
+        .fade-in-ready {
+            animation: fadeIn 0.8s ease-out forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
     </style>
 </head>
@@ -65,120 +83,188 @@
     <div class="max-w-4xl mx-auto">
         <!-- HEADER -->
         <header class="mb-8 border-b border-green-900 pb-4">
-            <h1 class="text-3xl font-bold tracking-tighter">DECISION<span class="text-white">OS</span> <span class="text-xs border border-green-500 px-1">v4.0 PROMETHEUS</span></h1>
-            <p class="text-xs opacity-60 mt-1">SİSTEM DURUMU: ÇEVRİMİÇİ | KERNEL: ACTIVE_THREAT_ANALYSIS</p>
+            <h1 class="text-3xl font-bold tracking-tighter">DECISION<span class="text-white">OS</span> <span class="text-xs border border-green-500 px-1 ml-2">v4.0 PROMETHEUS</span></h1>
+            <div class="flex justify-between items-center mt-1">
+                <p class="text-[10px] opacity-60 uppercase tracking-widest">SİSTEM DURUMU: <span class="text-green-400">ÇEVRİMİÇİ</span> | BAĞLANTI: <span id="conn-status" class="text-blue-400">BEKLEMEDE</span></p>
+                <p class="text-[10px] opacity-40">INCIDENT_ID: NOVA-2026-X</p>
+            </div>
         </header>
 
         <!-- INPUT SECTION -->
-        <div class="mb-8">
-            <textarea id="incidentInput" class="w-full h-40 cyber-input p-4 rounded-none focus:outline-none focus:ring-1 focus:ring-green-400 text-sm" placeholder="KRİZ SENARYOSUNU BURAYA GİRİN... (Örn: Vergi denetimi, siber saldırı, nakit krizi...)"></textarea>
-            <button onclick="analyzeIncident()" id="actionBtn" class="w-full mt-4 py-4 cyber-button">ANALİZİ BAŞLAT</button>
+        <div class="mb-8 p-4 border border-green-900 bg-black bg-opacity-40">
+            <label class="text-[10px] uppercase text-green-500 mb-2 block font-bold">Olay Tanımı / Kriz Senaryosu:</label>
+            <textarea id="incidentInput" class="w-full h-32 cyber-input p-4 rounded-none focus:outline-none focus:ring-1 focus:ring-green-400 text-sm leading-relaxed" placeholder="Örn: Dubai merkezli ortağımız varlık kaçırmaya çalışıyor, veriler sızdı ve denetçiler kapıda..."></textarea>
+            <button onclick="analyzeIncident()" id="actionBtn" class="w-full mt-4 py-4 cyber-button">ANALİZ PROTOKOLLERİNİ ÇALIŞTIR</button>
         </div>
 
-        <!-- RESULT SECTION (Gizli başlar) -->
-        <div id="resultArea" class="hidden terminal-box p-6 relative overflow-hidden">
+        <!-- RESULT SECTION -->
+        <div id="resultArea" class="hidden terminal-box p-6 relative">
             <div id="brief">
-                <!-- Burası JavaScript ile dolacak -->
+                <!-- Dashboard İçeriği Buraya Gelecek -->
             </div>
         </div>
     </div>
 
     <script>
         async function analyzeIncident() {
-            const incidentText = document.getElementById('incidentInput').value;
+            const inputField = document.getElementById('incidentInput');
+            const incidentText = inputField.value;
             const resultArea = document.getElementById('resultArea');
             const brief = document.getElementById('brief');
             const actionBtn = document.getElementById('actionBtn');
+            const connStatus = document.getElementById('conn-status');
             
-            if (!incidentText) return alert("Lütfen bir senaryo girin.");
+            if (!incidentText.trim()) return alert("Lütfen bir senaryo girin.");
 
-            // Arayüz Hazırlığı
+            // UI Hazırlık
             actionBtn.disabled = true;
-            actionBtn.innerHTML = "İŞLENİYOR...";
+            actionBtn.innerHTML = "VERİ PAKETLERİ ANALİZ EDİLİYOR...";
+            connStatus.innerText = "VERİ GÖNDERİLİYOR";
             resultArea.classList.remove('hidden');
-            brief.innerHTML = '<div class="animate-pulse text-green-500 text-sm uppercase">>> DecisionOS v4.0 Booting...<br>>> Multi-Expert Council Calling...<br>>> Risk Score Calculating...</div>';
+            brief.innerHTML = `
+                <div class="space-y-2 text-xs opacity-80 uppercase">
+                    <p class="animate-pulse">>> Giriş metni doğrulanıyor...</p>
+                    <p class="animate-pulse" style="animation-delay: 0.2s">>> Abacus Prometheus Kernel ile köprü kuruluyor...</p>
+                    <p class="animate-pulse" style="animation-delay: 0.4s">>> Multi-expert konseyi (LAW, FINANCE, RISK) toplanıyor...</p>
+                </div>
+            `;
 
             try {
-                // Backend'e İstek Gönder (Render API URL)
-                const response = await fetch('https://decisionos-v4.onrender.com/analyze',{
+                // API İsteği
+                const response = await fetch('https://decisionos-v4.onrender.com/analyze', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ text: incidentText })
                 });
 
+                if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
+                
                 const data = await response.json();
-                let report;
+                let report = null;
 
-                // Veri Ayıklama (String veya Obje gelme durumuna göre)
+                // VERİ AYIKLAMA MANTIĞI (Tırnakları ve slashları temizle)
                 try {
-                    if (data.status === "success") {
-                        report = data.report;
-                    } else {
-                        // Eğer ham metin geldiyse içindeki JSON'u bul
-                        const rawText = typeof data.report === 'string' ? data.report : JSON.stringify(data.report);
-                        const jsonMatch = rawText.match(/\{[\s\S]*\}/);
-                        if (jsonMatch) {
-                            report = JSON.parse(jsonMatch[0]);
-                        } else {
-                            throw new Error("JSON formatı bulunamadı.");
+                    let rawReport = data.report;
+                    
+                    if (typeof rawReport === 'string') {
+                        // Fazladan tırnakları ve kaçış karakterlerini temizle
+                        let cleaned = rawReport.trim();
+                        
+                        // Başta ve sondaki çift tırnakları kaldır
+                        if (cleaned.startsWith('"') && cleaned.endsWith('"')) {
+                            cleaned = cleaned.substring(1, cleaned.length - 1);
                         }
+                        
+                        // İçerdeki \n, \", \\ gibi kaçış karakterlerini gerçek hallerine çevir
+                        // Not: Bazı durumlarda JSON.parse zaten bunu yapar ama önce string'i ham hale getirmek gerekebilir
+                        try {
+                            // Çift escape edilmiş karakterleri düzelt
+                            cleaned = cleaned.replace(/\\r/g, "").replace(/\\n/g, "\n").replace(/\\"/g, '"').replace(/\\\\/g, "\\");
+                            
+                            // JSON'u bul
+                            const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+                            if (jsonMatch) {
+                                report = JSON.parse(jsonMatch[0]);
+                            } else {
+                                report = JSON.parse(cleaned);
+                            }
+                        } catch (innerE) {
+                            // Eğer manuel temizlik başarısız olursa doğrudan parse dene
+                            report = JSON.parse(rawReport);
+                        }
+                    } else {
+                        report = rawReport;
                     }
+
+                    if (!report || !report.final_decision) throw new Error("Format uyuşmazlığı");
+
                 } catch (e) {
-                    brief.innerHTML = `<div class="p-4 text-red-500 border border-red-900">VERİ AYIKLAMA HATASI: Sunucudan dashboard uyumlu olmayan bir yanıt geldi.<br><br>Gelen Yanıt: ${JSON.stringify(data.report)}</div>`;
-                    actionBtn.disabled = false;
-                    actionBtn.innerHTML = "ANALİZİ BAŞLAT";
+                    console.error("Parse Error:", e);
+                    brief.innerHTML = `
+                        <div class="p-4 border border-red-900 bg-red-950 bg-opacity-20 text-xs">
+                            <p class="text-red-500 font-bold mb-2">VERİ AYIKLAMA HATASI [CODE: R-404]</p>
+                            <p class="opacity-80">Sunucudan gelen yanıt panelleştirilemedi. Lütfen teknik logu kontrol edin.</p>
+                            <div class="mt-4 p-2 bg-black opacity-60 overflow-auto max-h-48 text-[9px]">
+                                ${JSON.stringify(data.report)}
+                            </div>
+                        </div>
+                    `;
                     return;
                 }
 
-                // DASHBOARD RENDER
+                // DASHBOARD RENDER (ZAFER ANI)
+                connStatus.innerText = "İŞLEME TAMAMLANDI";
+                connStatus.classList.replace('text-blue-400', 'text-green-400');
+
                 brief.innerHTML = `
-                    <div class="space-y-6 animate-in fade-in duration-1000">
+                    <div class="space-y-6 fade-in-ready">
                         <!-- BOOT LOG -->
-                        <div class="border-l-2 border-blue-500 pl-4 py-1 bg-blue-900 bg-opacity-10 text-[10px]">
-                            <span class="text-blue-400 font-bold">SYSTEM_LOG ></span> ${report.boot_log}
+                        <div class="flex items-start gap-2 border-l-2 border-blue-500 pl-4 py-1 bg-blue-900 bg-opacity-10 text-[10px]">
+                            <span class="text-blue-400 font-bold">BOOT_LOG ></span>
+                            <span class="opacity-80 font-medium italic">${report.boot_log}</span>
                         </div>
 
                         <!-- DECISION -->
-                        <div class="border border-red-500 p-4 bg-red-900 bg-opacity-10 text-center">
+                        <div class="border border-red-500 p-4 bg-red-900 bg-opacity-10 text-center relative overflow-hidden">
+                             <div class="absolute top-0 right-0 p-1 text-[8px] bg-red-500 text-black font-bold">KRİTİK</div>
                             <div class="text-[0.6rem] text-red-500 font-bold mb-1 tracking-widest uppercase">NİHAİ KARAR PROTOKOLÜ</div>
                             <div class="text-2xl font-black uppercase tracking-tighter text-white">${report.final_decision}</div>
                         </div>
 
                         <!-- ANALYSIS & VETO -->
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div class="p-3 border border-green-900 bg-black">
-                                <div class="text-[10px] text-green-500 font-bold border-b border-green-900 mb-2 pb-1">UZMAN KONSEYİ ANALİZİ</div>
+                            <div class="p-3 border border-green-900 bg-black bg-opacity-40">
+                                <div class="text-[10px] text-green-500 font-bold border-b border-green-900 mb-2 pb-1 uppercase">Uzman Konseyi Analizi</div>
                                 <div class="text-[11px] leading-relaxed opacity-80">${report.analysis}</div>
                             </div>
-                            <div class="p-3 border ${report.veto ? 'border-red-600' : 'border-yellow-900'} bg-black">
-                                <div class="text-[10px] ${report.veto ? 'text-red-500' : 'text-yellow-600'} font-bold border-b border-green-900 mb-2 pb-1 text-red-100">VETO & KRİTİK UYARI</div>
-                                <div class="text-[11px] leading-relaxed ${report.veto ? 'text-red-400 font-bold' : 'opacity-80'}">${report.veto || 'HUKUKİ VETO TESPİT EDİLMEDİ'}</div>
+                            <div class="p-3 border ${report.veto ? 'border-red-600 bg-red-950 bg-opacity-10' : 'border-yellow-900 bg-yellow-950 bg-opacity-10'}">
+                                <div class="text-[10px] ${report.veto ? 'text-red-500' : 'text-yellow-600'} font-bold border-b border-green-900 mb-2 pb-1 uppercase">Veto & Uyarılar</div>
+                                <div class="text-[11px] leading-relaxed ${report.veto ? 'text-red-400 font-bold' : 'opacity-80'}">${report.veto || 'Herhangi bir veto kısıtı bulunmuyor.'}</div>
                             </div>
                         </div>
 
                         <!-- ACTION PLAN -->
-                        <div class="p-3 border border-green-800 bg-green-900 bg-opacity-5">
-                            <div class="text-[10px] text-green-500 font-bold border-b border-green-800 mb-3 pb-1">TAKTİKSEL EYLEM PLANI</div>
-                            <div class="space-y-3">
-                                <div><span class="text-[10px] text-green-400 font-bold">[0-1 SAAT]:</span> <span class="text-[10px] opacity-90">${report.action_plan["0-1h"].join(" | ")}</span></div>
-                                <div><span class="text-[10px] text-green-400 font-bold">[1-24 SAAT]:</span> <span class="text-[10px] opacity-90">${report.action_plan["1-24h"].join(" | ")}</span></div>
-                                <div><span class="text-[10px] text-green-400 font-bold">[24-72 SAAT]:</span> <span class="text-[10px] opacity-90">${report.action_plan["24-72h"].join(" | ")}</span></div>
+                        <div class="p-4 border border-green-800 bg-green-900 bg-opacity-5">
+                            <div class="text-[10px] text-green-500 font-bold border-b border-green-800 mb-4 pb-1 uppercase tracking-widest">Taktiksel Aksiyon Planı</div>
+                            <div class="space-y-4">
+                                <div class="flex gap-3">
+                                    <span class="text-[9px] bg-green-800 text-black px-2 py-0.5 font-bold h-fit min-w-[70px] text-center">0-1 SAAT</span>
+                                    <span class="text-[11px] opacity-90">${report.action_plan["0-1h"].join(" | ")}</span>
+                                </div>
+                                <div class="flex gap-3">
+                                    <span class="text-[9px] bg-green-700 text-black px-2 py-0.5 font-bold h-fit min-w-[70px] text-center">1-24 SAAT</span>
+                                    <span class="text-[11px] opacity-90">${report.action_plan["1-24h"].join(" | ")}</span>
+                                </div>
+                                <div class="flex gap-3">
+                                    <span class="text-[9px] bg-green-900 text-green-200 px-2 py-0.5 border border-green-700 font-bold h-fit min-w-[70px] text-center">24-72 SAAT</span>
+                                    <span class="text-[11px] opacity-90">${report.action_plan["24-72h"].join(" | ")}</span>
+                                </div>
                             </div>
                         </div>
                         
+                        <!-- EVIDENCE & CHECKLIST -->
+                        <div class="p-3 border border-gray-800 opacity-60">
+                            <div class="text-[9px] font-bold text-gray-500 uppercase mb-2">Toplanacak Kanıtlar & Checklist:</div>
+                            <ul class="text-[10px] list-disc list-inside space-y-1">
+                                ${report.evidence_and_checklist.map(item => `<li>${item}</li>`).join('')}
+                            </ul>
+                        </div>
+
                         <!-- FOOTER INFO -->
-                        <div class="flex justify-between items-center text-[9px] opacity-40 border-t border-green-900 pt-2">
-                            <span>CONFIDENCE: %${(report.confidence * 100).toFixed(0)}</span>
-                            <span class="max-w-[70%] text-right">${report.disclaimer || ''}</span>
+                        <div class="flex justify-between items-center text-[9px] opacity-30 border-t border-green-950 pt-3">
+                            <span>CONFIDENCE_LEVEL: %${(report.confidence * 100).toFixed(0)}</span>
+                            <span class="italic">${report.disclaimer || 'No legal disclaimer provided.'}</span>
                         </div>
                     </div>
                 `;
 
             } catch (error) {
-                brief.innerHTML = `<div class="p-4 text-red-500 border border-red-900">KRİTİK SİSTEM HATASI: ${error.message}</div>`;
+                connStatus.innerText = "SİSTEM HATASI";
+                connStatus.classList.replace('text-blue-400', 'text-red-500');
+                brief.innerHTML = `<div class="p-4 text-red-500 border border-red-900">SYSTEM FAILURE: ${error.message}</div>`;
             } finally {
                 actionBtn.disabled = false;
-                actionBtn.innerHTML = "ANALİZİ BAŞLAT";
+                actionBtn.innerHTML = "ANALİZ PROTOKOLLERİNİ ÇALIŞTIR";
             }
         }
     </script>
