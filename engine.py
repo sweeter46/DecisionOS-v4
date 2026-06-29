@@ -22,51 +22,45 @@ ABACUS_URL = "https://abacus.ai/api/v0/getChatResponse"
 
 @app.post("/analyze")
 async def analyze(incident: Incident):
-    # ABACUS'UN İSTEDİĞİ EN SAF LİSTE YAPISI
-    payload = {
-        "deploymentToken": DEPLOYMENT_TOKEN,
-        "deploymentId": DEPLOYMENT_ID,
-        "messages": [
-            {
-                "is_user": True,
-                "text": str(incident.text).strip()
-            }
-        ]
-    }
+    # 🚨 TEST PANELİNDE ÇALIŞAN SAF JSON YAPISI
+    # Safe_text içerisindeki tırnakları temizliyoruz ki JSON kırılmasın
+    clean_msg = str(incident.text).replace('"', "'").replace("\n", " ")
 
-    # JSON'ı en sıkı ve hatasız formatta (bosluksuz) hazirla
-    # separators=(',', ':') Abacus'un "list" olarak tanimasini garanti eder
-    compact_json = json.dumps(payload, separators=(',', ':'))
+    # Kütüphaneye (requests.json) güvenmiyoruz. 
+    # Test panelindeki başarımızı bu "Ham String" (Raw String) ile Render'a taşıyoruz.
+    raw_payload = (
+        '{"deploymentToken":"' + DEPLOYMENT_TOKEN + '",'
+        '"deploymentId":"' + DEPLOYMENT_ID + '",'
+        '"messages":[{"is_user":true,"text":"' + clean_msg + '"}]}'
+    )
 
     headers = {
         "Content-Type": "application/json",
-        "Accept": "application/json"
+        "User-Agent": "DecisionOS-Final-Fixed/22.0"
     }
 
     try:
-        # data= kullanarak ham veriyi (raw) hic degismeden gonderiyoruz
-        response = requests.post(ABACUS_URL, data=compact_json.encode('utf-8'), headers=headers, timeout=60)
+        # DATA= kullanarak python'un veriyi 'list değil objesi'ne çevirmesini engelliyoruz.
+        response = requests.post(
+            ABACUS_URL, 
+            data=raw_payload.encode('utf-8'), 
+            headers=headers, 
+            timeout=60
+        )
         
-        logger.info(f"Abacus Status: {response.status_code}")
+        logger.info(f"Abacus Log: {response.text}")
         res_json = response.json()
         
         if res_json.get("success"):
-            result = res_json.get("result", {})
-            raw_answer = result.get("answer") or result.get("content") or ""
-            
+            answer = res_json.get("result", {}).get("answer", "")
             # --- TEMİZLİK ---
-            clean = str(raw_answer)
-            junk = ["report_content", "evidence_and_checklist", "veto", "confidence", "disclaimer", "status"]
-            for tag in junk:
-                clean = clean.replace(tag, "")
-            
-            clean = clean.replace('"', '').replace('{', '').replace('}', '').replace('\\n', '\n').strip()
+            clean = str(answer).replace('{', '').replace('}', '').replace('"', '').replace(':', '').strip()
             return {"analysis": clean}
             
         return {"error": f"Abacus Reddi: {res_json.get('error')}"}
 
     except Exception as e:
-        return {"error": f"Bağlantı Hatası: {str(e)}"}
+        return {"error": f"Sistem Bağlantı Hatası: {str(e)}"}
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
