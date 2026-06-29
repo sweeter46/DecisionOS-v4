@@ -12,21 +12,21 @@ class Incident(BaseModel):
 
 @app.post("/analyze")
 async def analyze(incident: Incident):
-    # Dinamik Senaryo: Eğitim ve Grafik Odaklı Test Verisi
+    # Geometri Sınav Sorusu ve Çözüm Verisi
     return {
-        "title": "EĞİTİM ANALİZİ: MATEMATİK & İSTATİSTİK",
-        "description": "Öğrencinin 5 günlük çalışma performansı analiz edildi. Veriler artış eğilimindedir.",
+        "title": "GEOMETRİ SINAVI: ANALİTİK DÜZLEM VE DÖNEL CİSİMLER",
+        "description": "SORU: Köşeleri A(0,0), B(6,0) ve C(3,4) olan bir ABC üçgeni, x-ekseni etrafında 360 derece döndürülüyor. Oluşan cismin kesit alanındaki değişimi grafik üzerinde inceleyiniz ve toplam hacmi bulunuz.",
         "table_data": [
-            {"Gun": "Pazartesi", "Saat": 2},
-            {"Gun": "Salı", "Saat": 3},
-            {"Gun": "Çarşamba", "Saat": 1},
-            {"Gun": "Perşembe", "Saat": 4},
-            {"Gun": "Cuma", "Saat": 5}
+            {"Bileşen": "Taban Uzunluğu", "Değer": "6 Birim"},
+            {"Bileşen": "Tepe Yüksekliği (r)", "Değer": "4 Birim"},
+            {"Bileşen": "A Noktası", "Değer": "(0,0)"},
+            {"Bileşen": "B Noktası", "Değer": "(6,0)"},
+            {"Bileşen": "C Noktası", "Değer": "(3,4)"}
         ],
-        "chart_labels": ["Pzt", "Sal", "Çar", "Per", "Cum"],
-        "chart_values": [2, 3, 1, 4, 5],
-        "math_formula": "\\bar{x} = \\frac{\\sum_{i=1}^{n} x_i}{n} = 3.0",
-        "analysis": "Ortalama çalışma süresi günlük 3 saattir. Çarşamba günü verimlilik düşüşü saptanmıştır."
+        "chart_labels": ["0°", "90°", "180°", "270°", "360°"],
+        "chart_values": [0, 16, 32, 16, 0], # Kesit alanının dönüş esnasındaki varyasyonu
+        "math_formula": "V_{total} = \\frac{1}{3}\\pi r^2 h = \\frac{1}{3}\\pi (4^2) \\cdot 6 = 32\\pi \\text{ br}^3",
+        "analysis": "Çözüm: Üçgen döndürüldüğünde r=4 olan iki birleşik koni oluşur. Hacim formülü ile sonuç 32π birimküp olarak hesaplanır."
     }
 
 if __name__ == "__main__":
