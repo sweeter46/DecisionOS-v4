@@ -1,53 +1,71 @@
-import logging, requests, json, os, uvicorn
-from fastapi import FastAPI
+import os
+import json
+import requests
+import logging
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+import uvicorn
+
+# Sistem Logları (Engineering Mode)
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = FastAPI()
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_headers=["*"], allow_methods=["*"])
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
-class Incident(BaseModel):
-    text: str
+# ABACUS YAPILANDIRMASI
+ABACUS_URL = "https://abacus.ai/api/v0/getChatResponse"
+DEPLOYMENT_TOKEN = "79782bc44" # Senin tokenın
+DEPLOYMENT_ID = "1268ee5e2"     # Senin ID'n
 
 @app.post("/analyze")
-async def analyze(incident: Incident):
-    url = "https://api.abacus.ai/api/v0/getChatResponse"
-    payload = {
-        "deploymentToken": "f3baa2a32be542f9af98a81aa71da611",
-        "deploymentId": "63a2ddb70",
-        "messages": json.dumps([{"is_user": True, "text": incident.text}])
-    }
-
+async def analyze(request: Request):
     try:
-        response = requests.post(url, json=payload, timeout=90)
-        ai_data = response.json()
-        messages = ai_data.get("result", {}).get("messages", [])
-        raw_msg = next((m for m in reversed(messages) if not m.get("is_user")), {}).get("text", "")
+        body = await request.json()
+        user_text = body.get("text", "")
+        
+        payload = {
+            "deploymentToken": DEPLOYMENT_TOKEN,
+            "deploymentId": DEPLOYMENT_ID,
+            "messages": [{"is_user": True, "text": user_text}]
+        }
+        
+        headers = {"Content-Type": "application/json", "User-Agent": "DecisionOS-Architect/1.0"}
+        
+        # Abacus Çağrısı
+        response = requests.post(ABACUS_URL, json=payload, headers=headers)
+        res_json = response.json()
+        
+        if not res_json.get("success"):
+            return {"error": f"Abacus Reddi: {res_json.get('error')}"}
 
+        # --- YAZILIM USTASI MÜDAHALESİ (THE ARCHITECT) ---
+        raw_ai_answer = res_json.get("result", {}).get("answer", "")
+        logger.info(f"Ham AI Yanıtı: {raw_ai_answer[:100]}...")
+
+        # AI bazen yanıtı bir string'in içine gömer. Burası onu ayıklar.
+        clean_text = ""
         try:
-            # JSON paketini aç
-            inner = json.loads(raw_msg)
-            full_analysis = inner.get("analysis", "")
-            
-            # --- KRİTİK NOKTA: GİZLİ DOSYALARI (GRAPH/TABLE) METNE EKLE ---
-            # AI eğer grafik kodunu "files" içine koyduysa onu metne geri alıyoruz
-            if "files" in inner and isinstance(inner["files"], list):
-                for f in inner["files"]:
-                    if f.get("content"):
-                        full_analysis += f"\n\n{f.get('content')}"
-            
-            return {
-                "report": {
-                    "final_decision": inner.get("final_decision", "ANALİZ"),
-                    "analysis": full_analysis, # ARTIK GRAFİK BURADA!
-                    "confidence": inner.get("confidence", 0.95)
-                },
-                "status": "success"
-            }
+            # Eğer yanıt bir JSON string ise içindeki report_content'i al
+            parsed = json.loads(raw_ai_answer)
+            clean_text = parsed.get("report_content", raw_ai_answer)
         except:
-            return {"report": {"analysis": raw_msg}, "status": "partial"}
+            # Eğer doğrudan metin geldiyse veya parse edilemiyorsa
+            clean_text = raw_ai_answer
+
+        # Ekstra temizlik: Başlardaki ve sondaki gereksiz teknik kırıntıları uçur
+        if "report_content" in clean_text:
+            clean_text = clean_text.split("report_content", 1)[-1].strip(": \"'")
+        
+        # Eğer hala JSON kırıntısı kaldıysa final temizlik
+        clean_text = clean_text.replace('"}', '').replace('"', '').strip()
+
+        return {"analysis": clean_text}
+
     except Exception as e:
-        return {"report": str(e), "status": "error"}
+        logger.error(f"Hata: {str(e)}")
+        return {"error": str(e)}
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 8000)))
+    port = int(os.environ.get("PORT", 10000))
+    uvicorn.run(app, host="0.0.0.0", port=port)
