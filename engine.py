@@ -2,85 +2,72 @@ import os
 import requests
 import json
 import logging
-import re
+import uvicorn
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-import uvicorn
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = FastAPI()
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
 class Incident(BaseModel):
     text: str
 
-# --- GÜNCELLENMİŞ ABACUS KİMLİKLERİ ---
+# ABACUS KİMLİKLERİ
 DEPLOYMENT_TOKEN = "f3baa2a32be542f9af98a81aa71da611" 
 DEPLOYMENT_ID = "63a2ddb70"    
 ABACUS_URL = "https://abacus.ai/api/v0/getChatResponse"
 
 @app.post("/analyze")
 async def analyze(incident: Incident):
-    # Requests kütüphanesi json=payload ile double-encoding'i engeller
-    payload = {
-        "deploymentToken": DEPLOYMENT_TOKEN,
-        "deploymentId": DEPLOYMENT_ID,
-        "messages": [
-            {
-                "is_user": True, 
-                "text": str(incident.text).strip()
-            }
-        ]
-    }
+    # KESİN VE MANUEL JSON İNŞASI
+    # Hiçbir kütüphaneye güvenmiyoruz, string olarak tam formatı çiziyoruz.
+    user_message = incident.text.replace('"', "'").replace("\n", " ") # Tırnakları temizle
+    
+    raw_payload = (
+        '{\n'
+        f'  "deploymentToken": "{DEPLOYMENT_TOKEN}",\n'
+        f'  "deploymentId": "{DEPLOYMENT_ID}",\n'
+        '  "messages": [\n'
+        '    {\n'
+        '      "is_user": true,\n'
+        f'      "text": "{user_message}"\n'
+        '    }\n'
+        '  ]\n'
+        '}'
+    )
 
     headers = {
         "Content-Type": "application/json",
-        "Accept": "application/json",
-        "User-Agent": "DecisionOS-Architect/3.0"
+        "Accept": "application/json"
     }
 
     try:
-        response = requests.post(ABACUS_URL, json=payload, headers=headers, timeout=60)
-        logger.info(f"Abacus Yanıt Kodu: {response.status_code}")
+        # data=raw_payload kullanarak requests'in içeriği değiştirmesini engelliyoruz
+        response = requests.post(ABACUS_URL, data=raw_payload.encode('utf-8'), headers=headers, timeout=60)
+        
+        logger.info(f"Abacus Status: {response.status_code}")
         ai_data = response.json()
         
         if ai_data.get("success"):
-            raw_text = ai_data.get("result", {}).get("answer", "")
+            raw_answer = ai_data.get("result", {}).get("answer", "")
             
-            # --- ARINDIRMA MOTORU ---
-            clean = raw_text
-            
-            # report_content alanını ayıkla
-            if "report_content" in clean:
-                try:
-                    clean = clean.split("report_content", 1)[-1].strip(": \"'{}[]")
-                except:
-                    pass
-            
-            # Teknik etiket kırıntılarını temizle
-            junk_tags = ["evidence_and_checklist", "veto", "confidence", "disclaimer", "status", "partial", "boot_log"]
-            for tag in junk_tags:
+            # --- ARINDIRMA ---
+            clean = raw_answer
+            junk = ["report_content", "evidence_and_checklist", "veto", "confidence", "disclaimer", "status", "partial"]
+            for tag in junk:
                 clean = clean.replace(tag, "")
             
-            # Final karakter temizliği
-            clean = clean.replace('"', '').replace('{', '').replace('}', '').replace('\\n', '\n').replace('\\', '').replace(':', '').strip()
-            
+            clean = clean.replace('"', '').replace('{', '').replace('}', '').replace('\\n', '\n').strip()
             return {"analysis": clean}
             
-        return {"error": f"Abacus Hatası: {ai_data.get('error')}"}
+        return {"error": f"Abacus Reddi: {ai_data.get('error')}"}
 
     except Exception as e:
-        logger.error(f"Sistem Hatası: {str(e)}")
-        return {"error": f"Sistem Bağlantı Hatası: {str(e)}"}
+        return {"error": f"Bağlantı Hatası: {str(e)}"}
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
