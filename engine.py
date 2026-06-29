@@ -1,10 +1,9 @@
 import os
+import requests
 import json
 import logging
-import urllib.request
-import urllib.error
 import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -24,54 +23,55 @@ ABACUS_URL = "https://abacus.ai/api/v0/getChatResponse"
 
 @app.post("/analyze")
 async def analyze(incident: Incident):
-    # MESAJI HAZIRLA
-    safe_text = str(incident.text).replace('"', "'").replace("\n", " ").strip()
-    
-    # MANUEL JSON (Urllib için en saf haliyle)
-    payload_dict = {
+    # ABACUS'UN EN ÇOK KABUL ETTİĞİ 2 FARKLI YAPI
+    # 1. YAPI: Standart Liste yapısı (Ama requests ile değil, en saf haliyle)
+    payload = {
         "deploymentToken": DEPLOYMENT_TOKEN,
         "deploymentId": DEPLOYMENT_ID,
         "messages": [
-            {
-                "is_user": True,
-                "text": safe_text
-            }
+            {"is_user": True, "text": str(incident.text)}
         ]
     }
-    
-    # JSON'I BYTE'A ÇEVİR (Requests kütüphanesi olmadan)
-    binary_data = json.dumps(payload_dict).encode('utf-8')
-    
+
     headers = {
         "Content-Type": "application/json",
-        "User-Agent": "DecisionOS-Nuclear-V19/1.0"
+        "User-Agent": "DecisionOS-V20/1.0"
     }
 
     try:
-        # URLLIB İLE SAF TRANSFER
-        req = urllib.request.Request(ABACUS_URL, data=binary_data, headers=headers, method='POST')
+        # İLK DENEME: Standart Yapı
+        response = requests.post(ABACUS_URL, json=payload, headers=headers, timeout=60)
+        res_json = response.json()
         
-        with urllib.request.urlopen(req) as f:
-            response_data = f.read().decode('utf-8')
-            res_json = json.loads(response_data)
+        # EĞER YİNE "LIST" HATASI VERİRSE, OTOMATİK 2. YAPIYA GEÇ
+        if not res_json.get("success") and "must be a list" in str(res_json.get("error", "")):
+            logger.info("Liste hatası algılandı, alternatif yapı (Prompt Mode) deneniyor...")
             
+            # 2. YAPI: Bazı Abacus sürümleri 'prompt' veya tekil 'message' bekler
+            alt_payload = {
+                "deploymentToken": DEPLOYMENT_TOKEN,
+                "deploymentId": DEPLOYMENT_ID,
+                "prompt": str(incident.text) # Liste yerine direkt string
+            }
+            response = requests.post(ABACUS_URL, json=alt_payload, headers=headers, timeout=60)
+            res_json = response.json()
+
         if res_json.get("success"):
-            raw_answer = res_json.get("result", {}).get("answer", "")
+            # Yanıtı ayıkla (answer veya content alanından)
+            result = res_json.get("result", {})
+            raw_answer = result.get("answer") or result.get("content") or ""
             
-            # --- PROFESYONEL TEMİZLİK ---
-            clean = raw_answer
+            # --- TEMİZLİK ---
+            clean = str(raw_answer)
             junk = ["report_content", "evidence_and_checklist", "veto", "confidence", "disclaimer", "status", "partial"]
             for tag in junk:
                 clean = clean.replace(tag, "")
             
-            clean = clean.replace('"', '').replace('{', '').replace('}', '').replace('\\n', '\n').replace('\\', '').replace(':', '').strip()
+            clean = clean.replace('"', '').replace('{', '').replace('}', '').replace('\\n', '\n').strip()
             return {"analysis": clean}
             
         return {"error": f"Abacus Reddi: {res_json.get('error')}"}
 
-    except urllib.error.HTTPError as e:
-        error_body = e.read().decode()
-        return {"error": f"HTTP Hatası: {e.code} - {error_body}"}
     except Exception as e:
         return {"error": f"Bağlantı Hatası: {str(e)}"}
 
