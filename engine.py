@@ -6,17 +6,16 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
-# Sistem Logları (Engineering Mode)
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = FastAPI()
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
-# ABACUS YAPILANDIRMASI
+# ABACUS TEMEL YAPILANDIRMA
+# NOT: URL'nin sonunda deploymentId zaten gömülü olabilir, bu yüzden parametre olarak yollamıyoruz.
 ABACUS_URL = "https://abacus.ai/api/v0/getChatResponse"
-DEPLOYMENT_TOKEN = "79782bc44" # Senin tokenın
-DEPLOYMENT_ID = "1268ee5e2"     # Senin ID'n
+DEPLOYMENT_TOKEN = "79782bc44" # Senin Token'ın
 
 @app.post("/analyze")
 async def analyze(request: Request):
@@ -24,13 +23,13 @@ async def analyze(request: Request):
         body = await request.json()
         user_text = body.get("text", "")
         
+        # Sadece Token yolluyoruz, hata veren 'deploymentId'yi sildik.
         payload = {
             "deploymentToken": DEPLOYMENT_TOKEN,
-            "deploymentId": DEPLOYMENT_ID,
             "messages": [{"is_user": True, "text": user_text}]
         }
         
-        headers = {"Content-Type": "application/json", "User-Agent": "DecisionOS-Architect/1.0"}
+        headers = {"Content-Type": "application/json"}
         
         # Abacus Çağrısı
         response = requests.post(ABACUS_URL, json=payload, headers=headers)
@@ -39,26 +38,28 @@ async def analyze(request: Request):
         if not res_json.get("success"):
             return {"error": f"Abacus Reddi: {res_json.get('error')}"}
 
-        # --- YAZILIM USTASI MÜDAHALESİ (THE ARCHITECT) ---
-        raw_ai_answer = res_json.get("result", {}).get("answer", "")
-        logger.info(f"Ham AI Yanıtı: {raw_ai_answer[:100]}...")
-
-        # AI bazen yanıtı bir string'in içine gömer. Burası onu ayıklar.
-        clean_text = ""
-        try:
-            # Eğer yanıt bir JSON string ise içindeki report_content'i al
-            parsed = json.loads(raw_ai_answer)
-            clean_text = parsed.get("report_content", raw_ai_answer)
-        except:
-            # Eğer doğrudan metin geldiyse veya parse edilemiyorsa
-            clean_text = raw_ai_answer
-
-        # Ekstra temizlik: Başlardaki ve sondaki gereksiz teknik kırıntıları uçur
-        if "report_content" in clean_text:
-            clean_text = clean_text.split("report_content", 1)[-1].strip(": \"'")
+        # --- ARINDIRMA MOTORU ---
+        raw_answer = res_json.get("result", {}).get("answer", "")
         
-        # Eğer hala JSON kırıntısı kaldıysa final temizlik
-        clean_text = clean_text.replace('"}', '').replace('"', '').strip()
+        # Eğer yanıt bir JSON string ise içinden asıl metni çekmeye çalış
+        clean_text = raw_answer
+        try:
+            # AI bazen yanıtı tırnak içinde JSON olarak döner
+            if raw_answer.strip().startswith('{'):
+                parsed = json.loads(raw_answer)
+                clean_text = parsed.get("report_content", raw_answer)
+        except:
+            pass
+
+        # "report_content:", "status:", "confidence:" gibi kelimeleri temizle
+        targets = ["report_content", "evidence_and_checklist", "veto", "confidence", "disclaimer", "status", "boot_log"]
+        for target in targets:
+            if target in clean_text:
+                # Sadece bu kelimeleri ve yanındaki işaretleri temizle
+                clean_text = clean_text.replace(target, "")
+
+        # Kalan tırnak ve parantez temizliği
+        clean_text = clean_text.replace('"', '').replace('{', '').replace('}', '').replace(':', '').strip()
 
         return {"analysis": clean_text}
 
