@@ -1,5 +1,4 @@
 import os
-import random
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -13,41 +12,22 @@ class Incident(BaseModel):
 
 @app.post("/analyze")
 async def analyze(incident: Incident):
-    # Bu motor, girilen metne göre en mantıklı kriz analizini üretir
-    scenarios = [
-        {
-            "boot": "[Aktif Paketler: LAW, FIN, RISK] | Risk: L10 | Güven: 0.94",
-            "decision": "YAPMA - Veto Uygulandı",
-            "analysis": "LAW: Varlık transferi girişimi suç teşkil etmektedir. FIN: Likidite riski kritik seviyededir. RISK: Kontrolsüz çıkış iflas doğurur.",
-            "plan_1h": "Banka yetkilerini dondur - CFO",
-            "plan_24h": "İhtiyati tedbir al - LAW",
-            "plan_72h": "Suç duyurusu başlat - Global Law"
-        },
-        {
-            "boot": "[Aktif Paketler: CYBER, OPS, CRISIS] | Risk: L8 | Güven: 0.88",
-            "decision": "BEKLE - Manuel İnceleme",
-            "analysis": "CYBER: Veri sızıntısı kaynağı henüz izole edilemedi. OPS: Üretim hattı durdurulmalı. CRISIS: Basın açıklaması hazırlanmalı.",
-            "plan_1h": "Serverları izole et - IT Team",
-            "plan_24h": "Forensic audit başlat - Cyber",
-            "plan_72h": "PR kriz yönetimine geç - CMO"
-        }
-    ]
-    
-    # Giriş metnine göre senaryo seç (ya da rastgele ver)
-    selected = random.choice(scenarios)
-    
-    # DecisionOS Formatsız Saf Rapor
-    final_report = (
-        f"BOOT LOG: {selected['boot']}\n"
-        f"KARAR: {selected['decision']}\n"
-        f"ANALİZ: {selected['analysis']}\n"
-        f"0-1h: {selected['plan_1h']}\n"
-        f"1-24h: {selected['plan_24h']}\n"
-        f"24-72h: {selected['plan_72h']}\n"
-        f"DISCLAIMER: Risk L5+ Profesyonel danışmanlık zorunludur."
-    )
-    
-    return {"analysis": final_report}
+    # Dinamik Senaryo: Eğitim ve Grafik Odaklı Test Verisi
+    return {
+        "title": "EĞİTİM ANALİZİ: MATEMATİK & İSTATİSTİK",
+        "description": "Öğrencinin 5 günlük çalışma performansı analiz edildi. Veriler artış eğilimindedir.",
+        "table_data": [
+            {"Gun": "Pazartesi", "Saat": 2},
+            {"Gun": "Salı", "Saat": 3},
+            {"Gun": "Çarşamba", "Saat": 1},
+            {"Gun": "Perşembe", "Saat": 4},
+            {"Gun": "Cuma", "Saat": 5}
+        ],
+        "chart_labels": ["Pzt", "Sal", "Çar", "Per", "Cum"],
+        "chart_values": [2, 3, 1, 4, 5],
+        "math_formula": "\\bar{x} = \\frac{\\sum_{i=1}^{n} x_i}{n} = 3.0",
+        "analysis": "Ortalama çalışma süresi günlük 3 saattir. Çarşamba günü verimlilik düşüşü saptanmıştır."
+    }
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))

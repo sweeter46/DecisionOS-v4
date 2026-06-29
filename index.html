@@ -3,45 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DecisionOS | Neural Neural Engine</title>
+    <title>DecisionOS | Neural Neural Intelligence</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
     <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
     <style>
-        :root { --apple-blue: #0071e3; --bg: #000; }
-        body { background: var(--bg); color: #fff; font-family: 'Inter', sans-serif; margin: 0; padding: 40px 20px; display: flex; justify-content: center; min-height: 100vh; line-height: 1.5; }
-        .container { width: 100%; max-width: 800px; text-align: center; }
-        h1 { font-size: 3rem; font-weight: 700; margin-bottom: 40px; letter-spacing: -2px; }
-        .panel { background: rgba(255,255,255,0.05); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); border-radius: 24px; padding: 30px; margin-bottom: 40px; }
-        textarea { width: 100%; background: transparent; border: none; color: #fff; font-size: 1.2rem; outline: none; resize: none; text-align: center; font-family: inherit; }
-        button { background: #fff; color: #000; border: none; border-radius: 30px; padding: 15px 40px; font-weight: 600; cursor: pointer; margin-top: 20px; transition: 0.3s; }
-        button:hover { transform: scale(1.05); }
-        .result-card { display: none; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 24px; padding: 40px; text-align: left; }
-        #resultArea { white-space: pre-wrap; font-size: 1.1rem; color: #a1a1a6; margin-bottom: 30px; }
-        .chart-box { height: 300px; margin-top: 20px; }
+        :root { --apple-blue: #0071e3; --bg: #0a0a0c; }
+        body { background: var(--bg); color: #fff; font-family: 'Inter', sans-serif; margin: 0; padding: 40px 20px; display: flex; justify-content: center; min-height: 100vh; }
+        .container { width: 100%; max-width: 800px; }
+        h1 { font-size: 2.5rem; font-weight: 700; text-align: center; margin-bottom: 30px; letter-spacing: -1.5px; background: linear-gradient(to bottom, #fff, #888); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .input-box { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 25px; margin-bottom: 40px; }
+        textarea { width: 100%; background: transparent; border: none; color: #fff; font-size: 1.1rem; outline: none; resize: none; font-family: inherit; }
+        button { width: 100%; background: #fff; color: #000; border: none; border-radius: 40px; padding: 16px; font-weight: 600; cursor: pointer; margin-top: 15px; transition: 0.3s; }
+        button:hover { transform: scale(1.02); background: #eee; }
+        
+        /* Dinamik Akış Kartları */
+        .result-card { display: none; animation: fadeIn 0.8s ease; }
+        .content-block { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.08); border-radius: 24px; padding: 30px; margin-bottom: 20px; }
+        .pill { display: inline-block; padding: 5px 12px; background: rgba(0,113,227,0.1); color: var(--apple-blue); border-radius: 20px; font-size: 0.7rem; font-weight: 700; margin-bottom: 15px; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.9rem; }
+        th { text-align: left; color: #86868b; padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        td { padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .chart-box { height: 300px; margin: 30px 0; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>DecisionOS</h1>
-        <div class="panel">
-            <textarea id="incidentInput" rows="3" placeholder="What's on your mind?"></textarea>
-            <button onclick="analyzeIncident()">Analyze</button>
+        <div class="input-box">
+            <textarea id="userInput" rows="3" placeholder="Soru veya kriz senaryosunu buraya girin..."></textarea>
+            <button onclick="runAnalysis()">Generate Insight</button>
         </div>
-        <div id="resultCard" class="result-card">
-            <div id="resultArea"></div>
-            <div class="chart-box"><canvas id="analysisChart"></canvas></div>
-            <div id="mathResult" style="margin-top: 20px; text-align: center;"></div>
+        
+        <div id="resultFlow" class="result-card">
+            <!-- İçerik buraya dinamik olarak dolacak -->
         </div>
     </div>
+
     <script>
-        let myChart = null;
-        async function analyzeIncident() {
-            const input = document.querySelector('#incidentInput').value;
-            if (!input) return;
+        let chartInstance = null;
+
+        async function runAnalysis() {
+            const input = document.getElementById('userInput').value;
+            if(!input) return;
+            const flow = document.getElementById('resultFlow');
             const btn = document.querySelector('button');
-            btn.innerText = "Processing...";
+            
+            btn.innerText = "Analyzing Neural Data...";
+            
             try {
                 const response = await fetch('https://decisionos-v4.onrender.com/analyze', {
                     method: 'POST',
@@ -49,28 +60,66 @@
                     body: JSON.stringify({ text: input })
                 });
                 const data = await response.json();
-                document.getElementById('resultCard').style.display = 'block';
-                document.getElementById('resultArea').innerText = data.analysis;
-                btn.innerText = "Analyze";
-                if(data.math) katex.render(data.math, document.getElementById('mathResult'));
-                const ctx = document.getElementById('analysisChart').getContext('2d');
-                if (myChart) myChart.destroy();
-                myChart = new Chart(ctx, {
-                    type: 'line',
+                
+                // HTML Yapısını Dinamik Oluştur
+                flow.innerHTML = `
+                    <div class="content-block">
+                        <div class="pill">NEURAL ANALİZ</div>
+                        <h2 style="margin:0 0 15px 0; font-size:1.4rem;">${data.title}</h2>
+                        <p style="color:#a1a1a6;">${data.description}</p>
+                        
+                        <table>
+                            <thead><tr><th>Tanım/Gün</th><th>Değer</th></tr></thead>
+                            <tbody>
+                                ${data.table_data.map(row => `
+                                    <tr><td>${Object.values(row)[0]}</td><td>${Object.values(row)[1]}</td></tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="content-block">
+                        <div class="pill">VERİ GÖRSELLEŞTİRME</div>
+                        <div class="chart-box"><canvas id="mainChart"></canvas></div>
+                    </div>
+
+                    <div class="content-block">
+                        <div class="pill">TEKNİK FORMÜL</div>
+                        <div id="mathTarget" style="font-size:1.5rem; text-align:center; padding:20px 0;"></div>
+                        <p style="font-size:0.9rem; color:#a1a1a6; text-align:center;">${data.analysis}</p>
+                    </div>
+                `;
+                
+                flow.style.display = 'block';
+                btn.innerText = "Generate Insight";
+
+                // KaTeX Matematik Render
+                if(data.math_formula) {
+                    katex.render(data.math_formula, document.getElementById('mathTarget'), { displayMode: true });
+                }
+
+                // Chart.js Render
+                const ctx = document.getElementById('mainChart').getContext('2d');
+                if(chartInstance) chartInstance.destroy();
+                chartInstance = new Chart(ctx, {
+                    type: 'bar',
                     data: {
-                        labels: ['0', '1', '2', '3', '4', '5'],
+                        labels: data.chart_labels,
                         datasets: [{
-                            data: [30, 50, 40, 90, 70, 100],
+                            data: data.chart_values,
+                            backgroundColor: 'rgba(0, 113, 227, 0.4)',
                             borderColor: '#0071e3',
-                            tension: 0.4,
-                            pointRadius: 0,
-                            fill: true,
-                            backgroundColor: 'rgba(0,113,227,0.1)'
+                            borderWidth: 2,
+                            borderRadius: 10
                         }]
                     },
-                    options: { maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { display: false }, x: { grid: { display: false } } } }
+                    options: { maintainAspectRatio: false, plugins:{legend:{display:false}}, scales:{y:{grid:{color:'rgba(255,255,255,0.05)'}}, x:{grid:{display:false}}} }
                 });
-            } catch (e) { alert("Error connecting to neural engine."); btn.innerText = "Analyze"; }
+
+            } catch (e) {
+                alert("Bağlantı hatası!");
+                btn.innerText = "Generate Insight";
+            }
         }
     </script>
 </body>
