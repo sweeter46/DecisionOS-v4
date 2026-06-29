@@ -12,22 +12,57 @@ class Incident(BaseModel):
 
 @app.post("/analyze")
 async def analyze(incident: Incident):
-    # Geometri Sınav Sorusu ve Çözüm Verisi
-    return {
-        "title": "GEOMETRİ SINAVI: ANALİTİK DÜZLEM VE DÖNEL CİSİMLER",
-        "description": "SORU: Köşeleri A(0,0), B(6,0) ve C(3,4) olan bir ABC üçgeni, x-ekseni etrafında 360 derece döndürülüyor. Oluşan cismin kesit alanındaki değişimi grafik üzerinde inceleyiniz ve toplam hacmi bulunuz.",
-        "table_data": [
-            {"Bileşen": "Taban Uzunluğu", "Değer": "6 Birim"},
-            {"Bileşen": "Tepe Yüksekliği (r)", "Değer": "4 Birim"},
-            {"Bileşen": "A Noktası", "Değer": "(0,0)"},
-            {"Bileşen": "B Noktası", "Değer": "(6,0)"},
-            {"Bileşen": "C Noktası", "Değer": "(3,4)"}
-        ],
-        "chart_labels": ["0°", "90°", "180°", "270°", "360°"],
-        "chart_values": [0, 16, 32, 16, 0], # Kesit alanının dönüş esnasındaki varyasyonu
-        "math_formula": "V_{total} = \\frac{1}{3}\\pi r^2 h = \\frac{1}{3}\\pi (4^2) \\cdot 6 = 32\\pi \\text{ br}^3",
-        "analysis": "Çözüm: Üçgen döndürüldüğünde r=4 olan iki birleşik koni oluşur. Hacim formülü ile sonuç 32π birimküp olarak hesaplanır."
-    }
+    userInput = incident.text.lower() # Küçük harfe çevirip ne istediğini anlayalım
+
+    # 1. SENARYO: GEOMETRİ/ÜÇGEN İSTERSE
+    if "geometri" in userInput or "üçgen" in userInput:
+        return {
+            "title": "NEURAL GEOMETRY ANALİZİ",
+            "description": "ABC üçgeninde kenar ve iç açı ilişkileri Core-Prometheus tarafından işlendi.",
+            "table_data": [
+                {"Bileşen": "A Açısı", "Değer": "40°"},
+                {"Bileşen": "B Açısı", "Değer": "60°"},
+                {"Bileşen": "C Açısı", "Değer": "80°"}
+            ],
+            "chart_labels": ["A", "B", "C"],
+            "chart_values": [40, 60, 80],
+            "math_formula": "A+B+C = 180^\\circ",
+            "analysis": "İç açılar toplamı korunmuştur. Üçgen dar açılıdır.",
+            "type": "radar" # Radar grafik tipi
+        }
+
+    # 2. SENARYO: SINAV/BAŞARI İSTERSE
+    elif "sınav" in userInput or "not" in userInput:
+        return {
+            "title": "ÖĞRENCİ PERFORMANS ANALİZİ",
+            "description": "Dönem içi not ortalamaları ve gelişim eğrisi hesaplandı.",
+            "table_data": [
+                {"Ders": "Matematik", "Not": 85},
+                {"Ders": "Fizik", "Not": 90},
+                {"Ders": "Geometri", "Not": 75}
+            ],
+            "chart_labels": ["Mat", "Fiz", "Geo"],
+            "chart_values": [85, 90, 75],
+            "math_formula": "\\text{Ortalama} = \\frac{85+90+75}{3} = 83.3",
+            "analysis": "Sayısal derslerde yüksek başarı saptanmıştır. Geometri için ek etüt önerilir.",
+            "type": "bar" # Bar grafik tipi
+        }
+
+    # 3. SENARYO: HİÇBİRİ DEĞİLSE (GENEL KARAR SİSTEMİ)
+    else:
+        return {
+            "title": "GENEL STRATEJİK ANALİZ",
+            "description": f"Girişi yapılan '{incident.text}' konusu için nöral ağlar çalıştırıldı.",
+            "table_data": [
+                {"Risk": "Düşük", "Olasılık": "%20"},
+                {"Risk": "Kritik", "Olasılık": "%5"}
+            ],
+            "chart_labels": ["Risk", "Güven", "Hız"],
+            "chart_values": [20, 85, 95],
+            "math_formula": "R(t) = \\int_{0}^{t} f(x)dx",
+            "analysis": "Genel parametreler stabil. Eylem planı onaylandı.",
+            "type": "line" # Çizgi grafik tipi
+        }
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
