@@ -2,74 +2,85 @@ import os
 import requests
 import json
 import logging
+import re
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 import uvicorn
 
-# Usta Log Sistemi
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = FastAPI()
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
-# ABACUS KİMLİĞİ (En Sade Haliyle)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+class Incident(BaseModel):
+    text: str
+
+# --- GÜNCELLENMİŞ ABACUS KİMLİKLERİ ---
+DEPLOYMENT_TOKEN = "f3baa2a32be542f9af98a81aa71da611" 
+DEPLOYMENT_ID = "63a2ddb70"    
 ABACUS_URL = "https://abacus.ai/api/v0/getChatResponse"
-DEPLOYMENT_TOKEN = "79782bc44"
 
 @app.post("/analyze")
-async def analyze(request: Request):
+async def analyze(incident: Incident):
+    # Requests kütüphanesi json=payload ile double-encoding'i engeller
+    payload = {
+        "deploymentToken": DEPLOYMENT_TOKEN,
+        "deploymentId": DEPLOYMENT_ID,
+        "messages": [
+            {
+                "is_user": True, 
+                "text": str(incident.text).strip()
+            }
+        ]
+    }
+
+    headers = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "User-Agent": "DecisionOS-Architect/3.0"
+    }
+
     try:
-        data = await request.json()
-        user_text = data.get("text", "")
-
-        # ARCHITECT NOTU: Bazı Abacus endpointleri deploymentId'yi JSON içinde kabul etmez.
-        # Bu yüzden en temel (basic) payload yapısına dönüyoruz.
-        payload = {
-            "deploymentToken": DEPLOYMENT_TOKEN,
-            "messages": [{"is_user": True, "text": user_text}]
-        }
+        response = requests.post(ABACUS_URL, json=payload, headers=headers, timeout=60)
+        logger.info(f"Abacus Yanıt Kodu: {response.status_code}")
+        ai_data = response.json()
         
-        headers = {"Content-Type": "application/json"}
-        
-        # İstek Gönderimi
-        response = requests.post(ABACUS_URL, json=payload, headers=headers)
-        res_json = response.json()
-        
-        logger.info(f"Abacus Raw Response: {res_json}")
-
-        if not res_json.get("success"):
-            # Eğer 'deploymentId' hatası alıyorsak, otomatik olarak alternatif yapıya geç
-            error_msg = res_json.get("error", "")
-            return {"error": f"Abacus Reddi: {error_msg}"}
-
-        # --- USTA İŞİ METİN TEMİZLEME ---
-        raw_answer = res_json.get("result", {}).get("answer", "")
-        
-        # Metni tüm teknik çöplerden (veto, confidence vb.) arındır
-        clean_text = raw_answer
-        
-        # AI bazen yanıtı bir JSON objesi gibi fırlatır, onu yakala
-        if clean_text.strip().startswith('{'):
-            try:
-                parsed = json.loads(clean_text)
-                clean_text = parsed.get("report_content", clean_text)
-            except:
-                pass
-
-        # Geleneksel temizlik (Filtreleme)
-        junk_tags = ["report_content", "evidence_and_checklist", "veto", "confidence", "disclaimer", "status", "partial", "boot_log"]
-        for tag in junk_tags:
-            clean_text = clean_text.replace(tag, "")
-
-        # Karakter temizliği
-        clean_text = clean_text.replace('"', '').replace('{', '').replace('}', '').replace('\\n', '\n').replace('\\', '').replace(':', '').strip()
-
-        return {"analysis": clean_text}
+        if ai_data.get("success"):
+            raw_text = ai_data.get("result", {}).get("answer", "")
+            
+            # --- ARINDIRMA MOTORU ---
+            clean = raw_text
+            
+            # report_content alanını ayıkla
+            if "report_content" in clean:
+                try:
+                    clean = clean.split("report_content", 1)[-1].strip(": \"'{}[]")
+                except:
+                    pass
+            
+            # Teknik etiket kırıntılarını temizle
+            junk_tags = ["evidence_and_checklist", "veto", "confidence", "disclaimer", "status", "partial", "boot_log"]
+            for tag in junk_tags:
+                clean = clean.replace(tag, "")
+            
+            # Final karakter temizliği
+            clean = clean.replace('"', '').replace('{', '').replace('}', '').replace('\\n', '\n').replace('\\', '').replace(':', '').strip()
+            
+            return {"analysis": clean}
+            
+        return {"error": f"Abacus Hatası: {ai_data.get('error')}"}
 
     except Exception as e:
         logger.error(f"Sistem Hatası: {str(e)}")
-        return {"error": "Sistem şu an meşgul, lütfen tekrar deneyin."}
+        return {"error": f"Sistem Bağlantı Hatası: {str(e)}"}
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
