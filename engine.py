@@ -12,56 +12,45 @@ class Incident(BaseModel):
 
 @app.post("/analyze")
 async def analyze(incident: Incident):
-    userInput = incident.text.lower() # Küçük harfe çevirip ne istediğini anlayalım
+    userInput = incident.text.lower()
 
-    # 1. SENARYO: GEOMETRİ/ÜÇGEN İSTERSE
+    # 1. GEOMETRİ SENARYOSU
     if "geometri" in userInput or "üçgen" in userInput:
         return {
             "title": "NEURAL GEOMETRY ANALİZİ",
-            "description": "ABC üçgeninde kenar ve iç açı ilişkileri Core-Prometheus tarafından işlendi.",
-            "table_data": [
-                {"Bileşen": "A Açısı", "Değer": "40°"},
-                {"Bileşen": "B Açısı", "Değer": "60°"},
-                {"Bileşen": "C Açısı", "Değer": "80°"}
-            ],
-            "chart_labels": ["A", "B", "C"],
+            "description": "ABC üçgeninde iç açılar ve kenar bağıntıları hesaplandı.",
+            "type": "radar",
+            "table_data": [{"Açı": "A", "Deg": 40}, {"Açı": "B", "Deg": 60}, {"Açı": "C", "Deg": 80}],
+            "chart_labels": ["A Açısı", "B Açısı", "C Açısı"],
             "chart_values": [40, 60, 80],
             "math_formula": "A+B+C = 180^\\circ",
-            "analysis": "İç açılar toplamı korunmuştur. Üçgen dar açılıdır.",
-            "type": "radar" # Radar grafik tipi
+            "analysis": "İç açılar toplamı 180 derecedir. Üçgen dar açılıdır."
         }
 
-    # 2. SENARYO: SINAV/BAŞARI İSTERSE
-    elif "sınav" in userInput or "not" in userInput:
+    # 2. SINAV / EĞİTİM SENARYOSU
+    elif "sınav" in userInput or "not" in userInput or "başarı" in userInput:
         return {
-            "title": "ÖĞRENCİ PERFORMANS ANALİZİ",
-            "description": "Dönem içi not ortalamaları ve gelişim eğrisi hesaplandı.",
-            "table_data": [
-                {"Ders": "Matematik", "Not": 85},
-                {"Ders": "Fizik", "Not": 90},
-                {"Ders": "Geometri", "Not": 75}
-            ],
-            "chart_labels": ["Mat", "Fiz", "Geo"],
-            "chart_values": [85, 90, 75],
-            "math_formula": "\\text{Ortalama} = \\frac{85+90+75}{3} = 83.3",
-            "analysis": "Sayısal derslerde yüksek başarı saptanmıştır. Geometri için ek etüt önerilir.",
-            "type": "bar" # Bar grafik tipi
+            "title": "EĞİTİM VE BAŞARI ANALİZİ",
+            "description": "Dönem içi ders performans verileri bar grafik olarak işlendi.",
+            "type": "bar",
+            "table_data": [{"Ders": "Matematik", "Not": 85}, {"Ders": "Fizik", "Not": 70}, {"Ders": "Türkçe", "Not": 95}],
+            "chart_labels": ["Matematik", "Fizik", "Türkçe"],
+            "chart_values": [85, 70, 95],
+            "math_formula": "\\bar{x} = 83.3",
+            "analysis": "Sözel ders başarısı sayısalın üzerindedir. Fizik dersine odaklanılmalı."
         }
 
-    # 3. SENARYO: HİÇBİRİ DEĞİLSE (GENEL KARAR SİSTEMİ)
+    # 3. VARSAYILAN / KRİZ SENARYOSU
     else:
         return {
-            "title": "GENEL STRATEJİK ANALİZ",
-            "description": f"Girişi yapılan '{incident.text}' konusu için nöral ağlar çalıştırıldı.",
-            "table_data": [
-                {"Risk": "Düşük", "Olasılık": "%20"},
-                {"Risk": "Kritik", "Olasılık": "%5"}
-            ],
-            "chart_labels": ["Risk", "Güven", "Hız"],
-            "chart_values": [20, 85, 95],
-            "math_formula": "R(t) = \\int_{0}^{t} f(x)dx",
-            "analysis": "Genel parametreler stabil. Eylem planı onaylandı.",
-            "type": "line" # Çizgi grafik tipi
+            "title": "STRATEJİK KRİZ YÖNETİMİ",
+            "description": f"Girişi yapılan '{incident.text}' konusu kriz protokolünde analiz edildi.",
+            "type": "line",
+            "table_data": [{"Risk": "Kritik", "Seviye": "L8"}, {"Güven": "Yüksek", "Oran": "%92"}],
+            "chart_labels": ["Başlangıç", "Süreç", "Final"],
+            "chart_values": [10, 45, 95],
+            "math_formula": "\\Delta Risk = f(t)",
+            "analysis": "Süreç stabil seyretmektedir. Operasyonel risk seviyesi L8."
         }
 
 if __name__ == "__main__":
